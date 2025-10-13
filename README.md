@@ -1,116 +1,100 @@
-# Baby Monitor App
+# Baby Monitor
 
-A simple, mobile-first web application for tracking baby events and milestones.
+Simple, mobile‑first web app to quickly log baby events (feed, sleep, diaper, doctor, milestones, notes).
 
 ## Overview
-This app is designed to be added to the iOS home screen as a web app. It provides quick and easy event tracking for parents monitoring their baby's daily activities.
+The app is designed to be added to an iOS home screen and used like a lightweight native app. UI is intentionally minimal and touch‑first: large tiles on a grid for one‑tap actions and a simple list to review history.
 
-## Design Goals
-- **Speed**: Any action should take less than 10 seconds
-- **Simplicity**: Minimal UI, intuitive controls
-- **Mobile-First**: Optimized for iOS devices
-- **No Page Refreshes**: Single Page Application with smooth animations
-- **Touch-Friendly**: Large buttons for easy tapping
+## Tech Stack
+- Frontend: `index.html` (HTML/CSS/vanilla JS), PWA manifest and icons
+- Backend: `events.php` (single PHP file)
+- Storage: `events.json` (flat JSON file on disk)
 
-## Features
+No database, no auth, just simple CRUD via PHP.
 
-### Main Grid (4x2 Layout)
-The home screen features up to 8 large, touch-friendly buttons:
+## Quick Start (Windows / PHP built‑in server)
+Prerequisite: PHP 8+ in your PATH.
 
-1. **Add Event** (Top Left)
-   - Opens modal to add custom event
-   - Fields: Event type, description, time (defaults to now)
-   - Quick save functionality
+From the project root:
 
-2. **View Events** (Top Right)
-   - Shows chronological list of all events
-   - Filter by date/type
-   - Swipe to delete
+```bash
+php -S 0.0.0.0:8000 -t C:\Projects\BabyMonitor
+```
 
-3. **Quick Feed** (Middle Left, Row 1)
-   - One-tap to log feeding event
-   - Shows timestamp notification
-   - Optional: tap and hold for details (bottle/breast, amount)
+Then open `http://localhost:8000` on your computer.
 
-4. **Quick Sleep** (Middle Right, Row 1)
-   - One-tap to log sleep event
-   - Toggle for "sleep start" vs "wake up"
-   - Shows duration if logging wake up
+To use on your iPhone (same Wi‑Fi): open `http://YOUR-LAN-IP:8000` in Safari, then add to Home Screen. See `SETUP.md` for detailed iOS steps and troubleshooting.
 
-5. **Quick Diaper** (Middle Left, Row 2)
-   - One-tap to log diaper change
-   - Optional: tap and hold for type (wet/dirty/both)
+## Using the App
+- Add Event: open the modal, pick a type, optional notes, time defaults to now
+- Quick Actions: one‑tap Feed, Sleep, Diaper
+- View Events: browse chronological list and delete if needed
 
-6. **Milestone** (Middle Right, Row 2)
-   - Log developmental milestones
-   - Opens form with description and date
-   - Examples: first smile, first steps, etc.
+Data is persisted to `events.json` by the backend.
 
-*Note: Grid can be simplified to 6 buttons (3x2) if preferred for larger touch targets*
+## API
+Base URL: `/events.php`
 
-### Event Types
-- Feed/Eat (bottle, breast, solid food)
-- Sleep (start/end times, duration)
-- Diaper Change (wet, dirty, both)
-- Medicine/Doctor Visit
-- Bath Time
-- Milestone
-- Custom/Notes
+- GET `/events.php`
+  - Returns an array of events (most recent first)
 
-### Event Properties
-- Type (required)
-- Timestamp (defaults to now)
-- Notes/Description (optional)
-- Additional metadata based on type
+- POST `/events.php`
+  - Content‑Type: `application/json`
+  - Body fields (required): `id`, `type`, `icon`, `time`
+  - Optional fields: `notes`, `meta` (any JSON object)
+  - Creates a new event at the beginning of the list or updates an existing event by `id`
 
-## Technical Stack
+- DELETE `/events.php`
+  - Content‑Type: `application/json`
+  - Body: `{ "id": "<event-id>" }`
 
-### Frontend
-- HTML5
-- CSS3 (Grid, Flexbox, Animations)
-- Vanilla JavaScript (or lightweight framework)
-- Progressive Web App (PWA) capabilities
-- Service Worker for offline functionality
+### Example Event Object
+```json
+{
+  "id": "1697222400000",
+  "type": "feed",
+  "icon": "🍼",
+  "time": "2025-10-13T07:45:00.000Z",
+  "notes": "120ml bottle",
+  "meta": { "amountMl": 120 }
+}
+```
 
-### Backend
-- PHP
-- MySQL Database
-- RESTful API endpoints
+### cURL Examples
+```bash
+# List events
+curl http://localhost:8000/events.php
 
-## User Flows
+# Add/update event
+curl -X POST http://localhost:8000/events.php \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id":"1697222400000",
+    "type":"sleep",
+    "icon":"😴",
+    "time":"2025-10-13T02:10:00.000Z",
+    "notes":"nap"
+  }'
 
-### Quick Event (3 seconds)
-1. Tap quick action button (Feed, Sleep, or Diaper)
-2. See confirmation animation
-3. Continue using app
+# Delete event
+curl -X DELETE http://localhost:8000/events.php \
+  -H "Content-Type: application/json" \
+  -d '{"id":"1697222400000"}'
+```
 
-### Custom Event (5-8 seconds)
-1. Tap "Add Event"
-2. Select type from dropdown
-3. Add optional notes
-4. Tap Save
-5. Return to main grid
+## Files of Interest
+- `index.html` — UI, interactions, and layout
+- `events.php` — JSON CRUD (GET, POST, DELETE) with CORS enabled
+- `events.json` — persisted events
+- `manifest.json` and icons — PWA metadata and app icons
+- `SETUP.md` — iOS Home Screen install guide and troubleshooting
 
-### View Events (2-5 seconds)
-1. Tap "View Events"
-2. Scroll through list
-3. Tap event to see details
-4. Swipe or tap delete to remove
-5. Tap back to return to grid
+## Notes
+- This is intentionally simple and local‑first. Do not expose publicly without adding authentication and validation.
+- CORS is open (`Access-Control-Allow-Origin: *`) to make local/mobile testing easy.
 
-## UI/UX Principles
-- **Large Touch Targets**: Minimum 60px buttons with spacing
-- **Clear Visual Feedback**: Animations on tap, success states
-- **Default Values**: Timestamp always defaults to "now"
-- **Color Coding**: Each event type has distinct color
-- **Minimal Input**: Reduce typing, use dropdowns and presets
-- **Haptic Feedback**: Vibration on successful action (mobile)
-
-## Future Enhancements
-- Statistics dashboard (feeding patterns, sleep duration)
-- Export data (CSV, PDF reports)
-- Multi-baby support
-- Sharing with partner/caregiver
-- Photo attachments for milestones
-- Notifications/reminders
+## Roadmap (nice‑to‑have)
+- Export (CSV)
+- Simple stats (sleep durations, feeding counts)
+- Optional multi‑device sync with a real backend
 
