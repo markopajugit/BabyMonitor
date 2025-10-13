@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Baby Monitor">
+    
+    <!-- App Icons -->
+    <link rel="icon" href="favicon.ico" sizes="any">
+    
+    <!-- iOS Home Screen Icons -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120x120.png">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <title>Baby Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        input, textarea, select {
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --feed: #ec4899;
+            --sleep: #8b5cf6;
+            --diaper: #f59e0b;
+            --milestone: #10b981;
+            --view: #0ea5e9;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --white: #ffffff;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 0;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .grid-container.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .grid-btn {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--white);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .grid-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .grid-btn.pulse::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .grid-btn:active {
+            filter: brightness(0.9);
+        }
+
+        .grid-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .grid-btn .icon {
+            font-size: 40px;
+        }
+
+        .btn-add { background: linear-gradient(135deg, var(--primary), #4f46e5); }
+        .btn-view { background: linear-gradient(135deg, var(--view), #0284c7); }
+        .btn-feed { background: linear-gradient(135deg, var(--feed), #db2777); }
+        .btn-sleep { background: linear-gradient(135deg, var(--sleep), #7c3aed); }
+        .btn-diaper { background: linear-gradient(135deg, var(--diaper), #d97706); }
+        .btn-milestone { background: linear-gradient(135deg, var(--milestone), #059669); }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            touch-action: auto;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .modal-header p {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text);
+        }
+
+        /* Events View */
+        .events-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 999;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            padding-top: max(100px, env(safe-area-inset-top) + 60px);
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Standalone PWA mode adjustments */
+        @media all and (display-mode: standalone) {
+            .events-view {
+                padding-top: max(120px, env(safe-area-inset-top) + 80px);
+            }
+            
+            .events-header {
+                padding-top: max(40px, env(safe-area-inset-top) + 40px);
+            }
+        }
+
+        /* Additional support for fullscreen mode */
+        @media all and (display-mode: fullscreen) {
+            .events-view {
+                padding-top: max(120px, env(safe-area-inset-top) + 80px);
+            }
+            
+            .events-header {
+                padding-top: max(40px, env(safe-area-inset-top) + 40px);
+            }
+        }
+
+        /* iOS specific adjustments for PWA mode */
+        @supports (-webkit-touch-callout: none) {
+            @media all and (display-mode: standalone) {
+                .events-view {
+                    padding-top: max(130px, env(safe-area-inset-top) + 90px);
+                }
+                
+                .events-header {
+                    padding-top: max(50px, env(safe-area-inset-top) + 50px);
+                }
+            }
+        }
+
+        .events-view.active {
+            transform: translateX(0);
+        }
+
+        .events-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            padding: 20px;
+            padding-top: max(20px, env(safe-area-inset-top) + 20px);
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        .back-btn {
+            background: var(--white);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 15px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease;
+        }
+
+        .back-btn:active {
+            transform: scale(0.95);
+        }
+
+        .events-header h2 {
+            font-size: 24px;
+            color: var(--text);
+        }
+
+        .event-list {
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: calc(100vh - 120px);
+        }
+
+        .event-item {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .event-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .event-icon.feed { background: linear-gradient(135deg, var(--feed), #db2777); }
+        .event-icon.sleep { background: linear-gradient(135deg, var(--sleep), #7c3aed); }
+        .event-icon.diaper { background: linear-gradient(135deg, var(--diaper), #d97706); }
+        .event-icon.milestone { background: linear-gradient(135deg, var(--milestone), #059669); }
+        .event-icon.custom { background: linear-gradient(135deg, var(--primary), #4f46e5); }
+
+        .event-details {
+            flex: 1;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .event-time {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        .event-notes {
+            margin-top: 8px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: var(--white);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-item {
+            animation: slideInUp 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Grid -->
+    <div class="grid-container" id="gridContainer">
+        <button class="grid-btn btn-add" onclick="openModal()">
+            <span class="icon">➕</span>
+            <span>Add Event</span>
+        </button>
+        <button class="grid-btn btn-view" onclick="openEventsView()">
+            <span class="icon">📋</span>
+            <span>View Events</span>
+        </button>
+        <button class="grid-btn btn-feed" onclick="quickEvent('Feed', '🍼')">
+            <span class="icon">🍼</span>
+            <span>Quick Feed</span>
+        </button>
+        <button class="grid-btn btn-sleep" onclick="quickEvent('Sleep', '😴')">
+            <span class="icon">😴</span>
+            <span>Quick Sleep</span>
+        </button>
+        <button class="grid-btn btn-diaper" onclick="quickEvent('Diaper', '🩱')">
+            <span class="icon">🩱</span>
+            <span>Quick Diaper</span>
+        </button>
+        <button class="grid-btn btn-milestone" onclick="openMilestoneModal()">
+            <span class="icon">⭐</span>
+            <span>Milestone</span>
+        </button>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Event</h2>
+                <p>Record a new activity</p>
+            </div>
+            <form id="eventForm">
+                <div class="form-group">
+                    <label for="eventType">Event Type</label>
+                    <select id="eventType" required>
+                        <option value="">Select type...</option>
+                        <option value="Feed">🍼 Feed</option>
+                        <option value="Sleep">😴 Sleep</option>
+                        <option value="Diaper">🩱 Diaper Change</option>
+                        <option value="Medicine">💊 Medicine</option>
+                        <option value="Bath">🛁 Bath Time</option>
+                        <option value="Doctor">👨‍⚕️ Doctor Visit</option>
+                        <option value="Milestone">⭐ Milestone</option>
+                        <option value="Other">📝 Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="eventTime">Time</label>
+                    <input type="datetime-local" id="eventTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventNotes">Notes (optional)</label>
+                    <textarea id="eventNotes" placeholder="Add any additional details..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Events View -->
+    <div class="events-view" id="eventsView">
+        <div class="events-header">
+            <button class="back-btn" onclick="closeEventsView()">
+                <span>←</span>
+            </button>
+            <h2>Events History</h2>
+        </div>
+        <div class="event-list" id="eventList">
+            <div class="empty-state">
+                <div class="icon">📭</div>
+                <h3>No events yet</h3>
+                <p>Start tracking your baby's activities</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Initialize events array
+        let events = [];
+
+        // Set current time as default
+        function setDefaultTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('eventTime').value = now.toISOString().slice(0, 16);
+        }
+
+        // Open modal
+        function openModal() {
+            document.getElementById('eventModal').classList.add('active');
+            setDefaultTime();
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('eventModal').classList.remove('active');
+            document.getElementById('eventForm').reset();
+        }
+
+        // Open milestone modal (same as regular modal but with milestone pre-selected)
+        function openMilestoneModal() {
+            openModal();
+            document.getElementById('eventType').value = 'Milestone';
+        }
+
+        // Quick event (one-tap)
+        function quickEvent(type, icon) {
+            const event = {
+                id: Date.now(),
+                type: type,
+                icon: icon,
+                time: new Date().toISOString(),
+                notes: ''
+            };
+            
+            // Pulse animation
+            const targetBtn = window.event?.target?.closest('.grid-btn');
+            if (targetBtn) {
+                targetBtn.classList.add('pulse');
+                setTimeout(() => targetBtn.classList.remove('pulse'), 600);
+            }
+            
+            saveEvent(event).then(success => {
+                if (success) {
+                    showToast(`${icon} ${type} recorded!`);
+                }
+            });
+        }
+
+        // Handle form submission
+        document.getElementById('eventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('eventType').value;
+            const time = document.getElementById('eventTime').value;
+            const notes = document.getElementById('eventNotes').value;
+            
+            const iconMap = {
+                'Feed': '🍼',
+                'Sleep': '😴',
+                'Diaper': '🩱',
+                'Medicine': '💊',
+                'Bath': '🛁',
+                'Doctor': '👨‍⚕️',
+                'Milestone': '⭐',
+                'Other': '📝'
+            };
+            
+            const event = {
+                id: Date.now(),
+                type: type,
+                icon: iconMap[type],
+                time: new Date(time).toISOString(),
+                notes: notes
+            };
+            
+            saveEvent(event).then(success => {
+                if (success) {
+                    closeModal();
+                    showToast(`${iconMap[type]} ${type} recorded!`);
+                }
+            });
+        });
+
+        // Load events from server
+        function loadEvents() {
+            fetch('events.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load events');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    events = Array.isArray(data) ? data : [];
+                    if (document.getElementById('eventsView').classList.contains('active')) {
+                        renderEvents();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    showToast('Failed to load events');
+                });
+        }
+
+        // Save single event to server
+        function saveEvent(event) {
+            return fetch('events.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(event)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to save event');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    loadEvents(); // Reload to get updated list
+                    return true;
+                } else {
+                    throw new Error(data.error || 'Failed to save event');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving event:', error);
+                showToast('Failed to save event');
+                return false;
+            });
+        }
+
+
+        // Open events view
+        function openEventsView() {
+            loadEvents();
+            document.getElementById('eventsView').classList.add('active');
+            document.getElementById('gridContainer').classList.add('hidden');
+        }
+
+        // Close events view
+        function closeEventsView() {
+            document.getElementById('eventsView').classList.remove('active');
+            document.getElementById('gridContainer').classList.remove('hidden');
+        }
+
+        // Render events list
+        function renderEvents() {
+            const eventList = document.getElementById('eventList');
+            
+            if (events.length === 0) {
+                eventList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <h3>No events yet</h3>
+                        <p>Start tracking your baby's activities</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            eventList.innerHTML = events.map(event => {
+                const date = new Date(event.time);
+                const timeStr = date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                const typeClass = event.type.toLowerCase();
+                
+                return `
+                    <div class="event-item">
+                        <div class="event-icon ${typeClass}">
+                            ${event.icon}
+                        </div>
+                        <div class="event-details">
+                            <div class="event-type">${event.type}</div>
+                            <div class="event-time">${timeStr}</div>
+                            ${event.notes ? `<div class="event-notes">${event.notes}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Prevent zoom and scroll
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('gesturechange', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('gestureend', function(e) {
+            e.preventDefault();
+        });
+        
+        // Prevent double-tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // Prevent pull-to-refresh on iOS
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Initialize
+        setDefaultTime();
+        loadEvents();
+    </script>
+</body>
+</html>
+
