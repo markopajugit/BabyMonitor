@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Handle preflight OPTIONS request
@@ -87,6 +87,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to save event to file']);
+    }
+    exit();
+}
+
+// Handle DELETE request - delete event by id
+if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if ($input === null || !isset($input['id'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Missing event id']);
+        exit();
+    }
+
+    $events = getEvents($eventsFile);
+    $beforeCount = count($events);
+    $events = array_values(array_filter($events, function($e) use ($input) {
+        return $e['id'] != $input['id'];
+    }));
+    if ($beforeCount === count($events)) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Event not found']);
+        exit();
+    }
+
+    if (saveEvents($eventsFile, $events)) {
+        echo json_encode(['success' => true, 'message' => 'Event deleted']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to save events file']);
     }
     exit();
 }
