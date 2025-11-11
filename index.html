@@ -1915,12 +1915,26 @@
             }
 
             // Precompute duration since last Feed Start for each Feed End (within the same day)
+            // and interval since last Feed End for each Feed Start (within the same day)
             const feedEndToDuration = new Map();
+            const feedStartToInterval = new Map();
             const asc = [...dayEvents].sort((a, b) => new Date(a.time) - new Date(b.time));
             let lastFeedStartTime = null;
+            let lastFeedEndTime = null;
             asc.forEach(ev => {
                 const evDate = new Date(ev.time);
                 if (ev.type === 'Feed Start') {
+                    if (lastFeedEndTime) {
+                        const diffMs = evDate - lastFeedEndTime;
+                        if (diffMs > 0) {
+                            const totalSeconds = Math.floor(diffMs / 1000);
+                            const minutes = Math.floor(totalSeconds / 60);
+                            const seconds = totalSeconds % 60;
+                            const mm = String(minutes);
+                            const ss = String(seconds).padStart(2, '0');
+                            feedStartToInterval.set(ev.id, `${mm}:${ss}`);
+                        }
+                    }
                     lastFeedStartTime = evDate;
                 } else if (ev.type === 'Feed End') {
                     if (lastFeedStartTime) {
@@ -1934,6 +1948,7 @@
                             feedEndToDuration.set(ev.id, `${mm}:${ss}`);
                         }
                     }
+                    lastFeedEndTime = evDate;
                 }
             });
 
@@ -1949,13 +1964,24 @@
                     hour12: false
                 });
                 const typeClass = event.type.toLowerCase();
-                const durationSinceFeedStart = event.type === 'Feed End' ? feedEndToDuration.get(event.id) : null;
+                let intervalText = '';
+                if (event.type === 'Feed End') {
+                    const durationSinceFeedStart = feedEndToDuration.get(event.id);
+                    if (durationSinceFeedStart) {
+                        intervalText = ` • ${durationSinceFeedStart}`;
+                    }
+                } else if (event.type === 'Feed Start') {
+                    const intervalSinceFeedEnd = feedStartToInterval.get(event.id);
+                    if (intervalSinceFeedEnd) {
+                        intervalText = ` • ${intervalSinceFeedEnd}`;
+                    }
+                }
                 return `
                     <div class="event-item">
                         <div class="event-icon ${typeClass}">${event.icon}</div>
                         <div class="event-details">
                             <div class="event-type">${event.type}</div>
-                            <div class="event-time">${timeStr}${durationSinceFeedStart ? ` • ${durationSinceFeedStart}` : ''}</div>
+                            <div class="event-time">${timeStr}${intervalText}</div>
                             ${event.notes ? `<div class=\"event-notes\">${event.notes}</div>` : ''}
                         </div>
                         <div style=\"margin-left: auto; display: flex; gap: 8px;\">
