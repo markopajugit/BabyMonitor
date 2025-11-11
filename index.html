@@ -1159,7 +1159,7 @@
 
     <!-- Timeline Click Info -->
     <div class="timeline-click-info" id="timelineClickInfo">
-        <h4 id="clickedTime">12:00 PM</h4>
+        <h4 id="clickedTime">12:00:00</h4>
         <div id="clickedEvents">
             <div class="event-item">
                 <span>😴</span>
@@ -1375,9 +1375,9 @@
                 const timeStr = date.toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
-                    hour: 'numeric',
+                    hour: '2-digit',
                     minute: '2-digit',
-                    hour12: true
+                    hour12: false
                 });
                 
                 const typeClass = event.type.toLowerCase();
@@ -1730,14 +1730,16 @@
                     
                     // Add tooltip
                     const startTimeStr = event.startTime.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
+                        hour: '2-digit',
                         minute: '2-digit',
-                        hour12: true
+                        second: '2-digit',
+                        hour12: false
                     });
                     const endTimeStr = event.endTime.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
+                        hour: '2-digit',
                         minute: '2-digit',
-                        hour12: true
+                        second: '2-digit',
+                        hour12: false
                     });
                     coloredSection.title = `${event.title}: ${startTimeStr} - ${endTimeStr}${event.notes ? '\n' + event.notes : ''}`;
                     
@@ -1784,9 +1786,10 @@
                     instantMarker.style.left = `${timePercent}%`;
                     
                     const timeStr = event.time.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
+                        hour: '2-digit',
                         minute: '2-digit',
-                        hour12: true
+                        second: '2-digit',
+                        hour12: false
                     });
                     
                     const instantIcon = document.createElement('div');
@@ -1807,8 +1810,10 @@
         function getTimePercentage(date) {
             const hours = date.getHours();
             const minutes = date.getMinutes();
-            const totalMinutes = hours * 60 + minutes;
-            return (totalMinutes / (24 * 60)) * 100;
+            const seconds = date.getSeconds();
+            const milliseconds = date.getMilliseconds();
+            const totalSeconds = hours * 3600 + minutes * 60 + seconds + (milliseconds / 1000);
+            return (totalSeconds / (24 * 3600)) * 100;
         }
 
 
@@ -1909,23 +1914,48 @@
                 return;
             }
 
+            // Precompute duration since last Feed Start for each Feed End (within the same day)
+            const feedEndToDuration = new Map();
+            const asc = [...dayEvents].sort((a, b) => new Date(a.time) - new Date(b.time));
+            let lastFeedStartTime = null;
+            asc.forEach(ev => {
+                const evDate = new Date(ev.time);
+                if (ev.type === 'Feed Start') {
+                    lastFeedStartTime = evDate;
+                } else if (ev.type === 'Feed End') {
+                    if (lastFeedStartTime) {
+                        const diffMs = evDate - lastFeedStartTime;
+                        if (diffMs > 0) {
+                            const totalSeconds = Math.floor(diffMs / 1000);
+                            const minutes = Math.floor(totalSeconds / 60);
+                            const seconds = totalSeconds % 60;
+                            const mm = String(minutes);
+                            const ss = String(seconds).padStart(2, '0');
+                            feedEndToDuration.set(ev.id, `${mm}:${ss}`);
+                        }
+                    }
+                }
+            });
+
             // Sort by time descending (latest first)
             const sorted = [...dayEvents].sort((a, b) => new Date(b.time) - new Date(a.time));
 
             list.innerHTML = sorted.map(event => {
                 const date = new Date(event.time);
                 const timeStr = date.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
+                    hour: '2-digit',
                     minute: '2-digit',
-                    hour12: true
+                    second: '2-digit',
+                    hour12: false
                 });
                 const typeClass = event.type.toLowerCase();
+                const durationSinceFeedStart = event.type === 'Feed End' ? feedEndToDuration.get(event.id) : null;
                 return `
                     <div class="event-item">
                         <div class="event-icon ${typeClass}">${event.icon}</div>
                         <div class="event-details">
                             <div class="event-type">${event.type}</div>
-                            <div class="event-time">${timeStr}</div>
+                            <div class="event-time">${timeStr}${durationSinceFeedStart ? ` • ${durationSinceFeedStart}` : ''}</div>
                             ${event.notes ? `<div class=\"event-notes\">${event.notes}</div>` : ''}
                         </div>
                         <div style=\"margin-left: auto; display: flex; gap: 8px;\">
