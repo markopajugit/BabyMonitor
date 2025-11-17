@@ -1776,13 +1776,11 @@
                     const startTimeStr = event.startTime.toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit',
                         hour12: false
                     });
                     const endTimeStr = event.endTime.toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit',
                         hour12: false
                     });
                     coloredSection.title = `${event.title}: ${startTimeStr} - ${endTimeStr}${event.notes ? '\n' + event.notes : ''}`;
@@ -1832,7 +1830,6 @@
                     const timeStr = event.time.toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit',
                         hour12: false
                     });
                     
@@ -1971,12 +1968,18 @@
                     if (lastFeedEndTime) {
                         const diffMs = evDate - lastFeedEndTime;
                         if (diffMs > 0) {
-                            const totalSeconds = Math.floor(diffMs / 1000);
-                            const minutes = Math.floor(totalSeconds / 60);
-                            const seconds = totalSeconds % 60;
-                            const mm = String(minutes);
-                            const ss = String(seconds).padStart(2, '0');
-                            feedStartToInterval.set(ev.id, `${mm}:${ss}`);
+                            const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                            const hours = Math.floor(totalMinutes / 60);
+                            const minutes = totalMinutes % 60;
+                            let intervalStr = '';
+                            if (hours > 0 && minutes > 0) {
+                                intervalStr = `${hours}h ${minutes}m`;
+                            } else if (hours > 0) {
+                                intervalStr = `${hours}h`;
+                            } else {
+                                intervalStr = `${minutes}m`;
+                            }
+                            feedStartToInterval.set(ev.id, intervalStr);
                         }
                     }
                     lastFeedStartTime = evDate;
@@ -1984,12 +1987,18 @@
                     if (lastFeedStartTime) {
                         const diffMs = evDate - lastFeedStartTime;
                         if (diffMs > 0) {
-                            const totalSeconds = Math.floor(diffMs / 1000);
-                            const minutes = Math.floor(totalSeconds / 60);
-                            const seconds = totalSeconds % 60;
-                            const mm = String(minutes);
-                            const ss = String(seconds).padStart(2, '0');
-                            feedEndToDuration.set(ev.id, `${mm}:${ss}`);
+                            const totalMinutes = Math.floor(diffMs / (1000 * 60));
+                            const hours = Math.floor(totalMinutes / 60);
+                            const minutes = totalMinutes % 60;
+                            let durationStr = '';
+                            if (hours > 0 && minutes > 0) {
+                                durationStr = `${hours}h ${minutes}m`;
+                            } else if (hours > 0) {
+                                durationStr = `${hours}h`;
+                            } else {
+                                durationStr = `${minutes}m`;
+                            }
+                            feedEndToDuration.set(ev.id, durationStr);
                         }
                     }
                     lastFeedEndTime = evDate;
@@ -2004,7 +2013,6 @@
                 const timeStr = date.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
-                    second: '2-digit',
                     hour12: false
                 });
                 const typeClass = event.type.toLowerCase();
