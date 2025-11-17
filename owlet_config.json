@@ -2,7 +2,7 @@
   "email": "marinapaju92@gmail.com",
   "password": "blasonsimlen!",
   "region": "europe",
-  "sync_interval_minutes": 1,
+  "sync_interval_seconds": 60,
   "retention_hours": 48,
   "auto_create_events": true,
   "php_api_endpoint": "http://babymonitor.hardcoded.ee/events.php",

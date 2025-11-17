@@ -182,23 +182,29 @@ class OwletSyncService:
         try:
             props = sock.properties if hasattr(sock, 'properties') else {}
             
+            # Debug: Log all available properties
+            logger.debug(f"Available properties keys: {list(props.keys())}")
+            logger.debug(f"Full properties: {props}")
+            
             # Use timezone-aware UTC time
             vital = {
                 'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'heart_rate': props.get('heart_rate'),
-                'oxygen_level': props.get('oxygen_level'),
+                'oxygen_level': props.get('oxygen_level') or props.get('oxy_level'),  # Try alternate key
                 'movement': props.get('movement'),
                 'battery': props.get('battery'),
-                'sock_connected': props.get('sock_on'),
+                'sock_connected': props.get('sock_on') or props.get('connected'),  # Try alternate keys
                 'low_battery': props.get('low_battery'),
                 'high_heart_rate': props.get('high_heart_rate'),
                 'low_oxygen': props.get('low_oxygen'),
             }
             
-            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_level']}, Battery={vital['battery']}%")
+            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_level']}, Battery={vital['battery']}%, Connected={vital['sock_connected']}")
             return vital
         except Exception as e:
             logger.error(f"Failed to extract vital data: {e}")
+            import traceback
+            logger.debug(f"Full traceback: {traceback.format_exc()}")
             return None
     
     def detect_sleep_state(self, sock):
@@ -344,10 +350,14 @@ class OwletSyncService:
     
     async def run_service(self):
         """Run the service continuously"""
-        sync_interval = self.config.get('sync_interval_minutes', 15)
-        sync_interval_seconds = sync_interval * 60
-        
-        logger.info(f"Starting Owlet sync service (interval: {sync_interval} minutes)")
+        # Support both minutes and seconds for flexibility
+        if 'sync_interval_seconds' in self.config:
+            sync_interval_seconds = self.config.get('sync_interval_seconds', 60)
+            logger.info(f"Starting Owlet sync service (interval: {sync_interval_seconds} seconds)")
+        else:
+            sync_interval = self.config.get('sync_interval_minutes', 1)
+            sync_interval_seconds = sync_interval * 60
+            logger.info(f"Starting Owlet sync service (interval: {sync_interval} minutes = {sync_interval_seconds} seconds)")
         
         try:
             while True:
@@ -356,7 +366,7 @@ class OwletSyncService:
                 except Exception as e:
                     logger.error(f"Unexpected error during sync: {e}")
                 
-                logger.info(f"Next sync in {sync_interval} minutes")
+                logger.info(f"Next sync in {sync_interval_seconds} seconds")
                 await asyncio.sleep(sync_interval_seconds)
         except KeyboardInterrupt:
             logger.info("Service interrupted by user")

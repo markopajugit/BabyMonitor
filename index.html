@@ -1084,14 +1084,14 @@
     </div>
 
     <!-- Owlet Monitor View -->
-    <div class="events-view" id="owletView">
+    <div class="events-view" id="owletView" style="touch-action: pan-y;">
         <div class="events-header">
             <button class="back-btn" onclick="closeOwletView()">
                 <span>←</span>
             </button>
             <h2>Owlet Monitor</h2>
         </div>
-        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;" id="owletContainer">
             <div id="owletStatus" style="margin-bottom: 20px;">
                 <div class="empty-state">
                     <div class="icon">💓</div>
@@ -1372,25 +1372,81 @@
         }
 
         // Owlet Monitor
+        let owletTouchStartX = 0;
+        let owletTouchStartY = 0;
+        let owletAutoRefreshInterval = null;
+        
         function openOwletView() {
             document.getElementById('owletView').classList.add('active');
             document.getElementById('gridContainer').classList.add('hidden');
             loadOwletData();
+            setupOwletSwipeGesture();
+            
+            // Auto-refresh vital data every 30 seconds while view is open
+            if (owletAutoRefreshInterval) clearInterval(owletAutoRefreshInterval);
+            owletAutoRefreshInterval = setInterval(() => {
+                if (document.getElementById('owletView').classList.contains('active')) {
+                    loadOwletData();
+                } else {
+                    // Stop interval if view is closed
+                    if (owletAutoRefreshInterval) {
+                        clearInterval(owletAutoRefreshInterval);
+                        owletAutoRefreshInterval = null;
+                    }
+                }
+            }, 10000); // Refresh every 30 seconds
         }
 
         function closeOwletView() {
             document.getElementById('owletView').classList.remove('active');
             document.getElementById('gridContainer').classList.remove('hidden');
+            
+            // Stop auto-refresh when closing
+            if (owletAutoRefreshInterval) {
+                clearInterval(owletAutoRefreshInterval);
+                owletAutoRefreshInterval = null;
+            }
+        }
+        
+        function setupOwletSwipeGesture() {
+            const container = document.getElementById('owletContainer');
+            if (!container) return;
+            
+            container.addEventListener('touchstart', (e) => {
+                owletTouchStartX = e.touches[0].clientX;
+                owletTouchStartY = e.touches[0].clientY;
+            }, false);
+            
+            container.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const diffX = touchEndX - owletTouchStartX;
+                const diffY = touchEndY - owletTouchStartY;
+                
+                // Swipe right with minimal vertical movement
+                if (diffX > 100 && Math.abs(diffY) < 50) {
+                    closeOwletView();
+                }
+            }, false);
         }
 
         async function loadOwletData() {
             const statusDiv = document.getElementById('owletStatus');
             try {
+                // Show loading indicator briefly
+                const wasVisible = statusDiv.style.opacity !== '0.5';
+                statusDiv.style.opacity = '0.7';
+                statusDiv.style.transition = 'opacity 0.3s ease';
+                
                 const response = await fetch('events.php?vitals=true');
                 if (!response.ok) throw new Error('Failed to fetch vitals');
                 
                 const data = await response.json();
                 const { latest_reading, vitals, last_update } = data;
+                
+                // Restore visibility
+                statusDiv.style.opacity = '1';
                 
                 if (!latest_reading) {
                     statusDiv.innerHTML = `
@@ -1411,32 +1467,51 @@
                 
                 const getVitalStatus = (value, low, high, label) => {
                     if (value === null || value === undefined) return 'gray';
-                    if (value < low || value > high) return 'red';
-                    return 'green';
+                    if (typeof value === 'number') {
+                        if (value < low || value > high) return 'red';
+                        return 'green';
+                    }
+                    return 'gray';
                 };
                 
                 const hrStatus = getVitalStatus(latest_reading.heart_rate, 60, 160, 'HR');
                 const o2Status = getVitalStatus(latest_reading.oxygen_level, 95, 100, 'O2');
                 
+                const heartRateDisplay = latest_reading.heart_rate !== null && latest_reading.heart_rate !== undefined 
+                    ? latest_reading.heart_rate + ' bpm' 
+                    : 'N/A';
+                const o2Display = latest_reading.oxygen_level !== null && latest_reading.oxygen_level !== undefined 
+                    ? latest_reading.oxygen_level + '%' 
+                    : 'N/A';
+                const batteryDisplay = latest_reading.battery !== null && latest_reading.battery !== undefined 
+                    ? latest_reading.battery + '%' 
+                    : 'N/A';
+                const movementDisplay = latest_reading.movement !== null && latest_reading.movement !== undefined 
+                    ? latest_reading.movement 
+                    : 'N/A';
+                
                 statusDiv.innerHTML = `
                     <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
-                            <span style="font-size: 12px; color: #64748b;">Updated ${lastUpdateTime}</span>
+                            <div>
+                                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
+                                <div style="font-size: 11px; color: #10b981; margin-top: 2px;">🔄 Auto-updating every 30s</div>
+                            </div>
+                            <span style="font-size: 12px; color: #64748b; text-align: right;">Updated<br>${lastUpdateTime}</span>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#cbd5e1'};">
                                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Heart Rate</div>
                                 <div style="font-size: 28px; font-weight: 600; color: ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#64748b'};">
-                                    ${latest_reading.heart_rate !== null ? latest_reading.heart_rate + ' bpm' : 'N/A'}
+                                    ${heartRateDisplay}
                                 </div>
                             </div>
                             
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#cbd5e1'};">
                                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Oxygen Level</div>
                                 <div style="font-size: 28px; font-weight: 600; color: ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b'};">
-                                    ${latest_reading.oxygen_level !== null ? latest_reading.oxygen_level + '%' : 'N/A'}
+                                    ${o2Display}
                                 </div>
                             </div>
                         </div>
@@ -1445,24 +1520,25 @@
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
                                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
                                 <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${latest_reading.movement !== null ? latest_reading.movement : 'N/A'}
+                                    ${movementDisplay}
                                 </div>
                             </div>
                             
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
                                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
                                 <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${latest_reading.battery !== null ? latest_reading.battery + '%' : 'N/A'}
+                                    ${batteryDisplay}
                                 </div>
                             </div>
                         </div>
                         
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
                             <div style="font-size: 12px; color: #64748b;">
-                                Sock Connected: <strong style="color: ${latest_reading.sock_connected ? '#10b981' : '#ef4444'};">${latest_reading.sock_connected ? '✓ Yes' : '✗ No'}</strong>
+                                Sock Connected: <strong style="color: ${latest_reading.sock_connected === true ? '#10b981' : '#ef4444'};">${latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown'}</strong>
                             </div>
-                            ${latest_reading.low_oxygen ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>' : ''}
-                            ${latest_reading.high_heart_rate ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>' : ''}
+                            ${latest_reading.low_oxygen === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>' : ''}
+                            ${latest_reading.high_heart_rate === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>' : ''}
+                            ${latest_reading.low_battery === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>' : ''}
                         </div>
                     </div>
                     
@@ -1474,11 +1550,13 @@
                                     hour: '2-digit',
                                     minute: '2-digit'
                                 });
+                                const hrDisplay = vital.heart_rate !== null && vital.heart_rate !== undefined ? vital.heart_rate : 'N/A';
+                                const o2Display = vital.oxygen_level !== null && vital.oxygen_level !== undefined ? vital.oxygen_level : 'N/A';
                                 return `
                                     <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; border-left: 3px solid #ec4899;">
                                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                             <strong>${time}</strong>
-                                            <span style="color: #64748b;">${vital.heart_rate} bpm • ${vital.oxygen_level}%</span>
+                                            <span style="color: #64748b;">${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''} • ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
                                         </div>
                                     </div>
                                 `;
