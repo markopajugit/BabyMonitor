@@ -1802,23 +1802,12 @@
         function openOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.add('active');
             document.getElementById('owletView').classList.add('hidden');
+            // Load history once without auto-refresh to ensure it completes
             loadOwletHistory();
             setupHistorySwipeGesture();
-            // Auto-refresh history every 10 minutes (600000ms)
+            // Don't auto-refresh history - load once and display static data
             if (owletHistoryAutoRefreshInterval) clearTimeout(owletHistoryAutoRefreshInterval);
-            const scheduleHistoryRefresh = () => {
-                if (document.getElementById('owletHistoryView').classList.contains('active')) {
-                    loadOwletHistory().finally(() => {
-                        owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 600000);
-                    });
-                } else {
-                    if (owletHistoryAutoRefreshInterval) {
-                        clearTimeout(owletHistoryAutoRefreshInterval);
-                        owletHistoryAutoRefreshInterval = null;
-                    }
-                }
-            };
-            owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 600000);
+            owletHistoryAutoRefreshInterval = null;
         }
         
         function closeOwletHistoryView() {
