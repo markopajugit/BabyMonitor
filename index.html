@@ -1999,7 +1999,7 @@
                 };
                 
                 updateElement('historyTimeSpan', timeSpan);
-                updateElement('historyTotalReadings', vitals.length);
+                updateElement('historyTotalReadings', dailyStats?.data_points || 0);
                 updateElement('historyAvgHR', avgHR);
                 updateElement('historyMinHR', minHR);
                 updateElement('historyMaxHR', maxHR);
