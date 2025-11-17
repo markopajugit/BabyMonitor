@@ -32,6 +32,7 @@ class OwletSyncService:
         self.vitals_file = 'owlet_vitals.json'
         self.api = None
         self.last_sleep_state = None
+        self.session = None
         
     def load_config(self):
         """Load configuration from JSON file"""
@@ -86,6 +87,10 @@ class OwletSyncService:
     async def authenticate(self):
         """Authenticate with Owlet API"""
         try:
+            # If already authenticated, return True
+            if self.api is not None:
+                return True
+            
             region = self.config.get('region', 'us-east-1')
             email = self.config.get('email')
             password = self.config.get('password')
@@ -100,6 +105,7 @@ class OwletSyncService:
             return True
         except Exception as e:
             logger.error(f"Authentication failed: {e}")
+            self.api = None
             return False
     
     async def fetch_device_data(self):
@@ -109,18 +115,34 @@ class OwletSyncService:
                 logger.error("API not authenticated")
                 return None
             
-            devices = await self.api.get_devices()
-            if not devices:
+            try:
+                devices = await self.api.get_devices()
+            except Exception as e:
+                logger.error(f"Failed to get devices: {e}")
+                # Reset API instance on error to force re-authentication next time
+                self.api = None
+                return None
+            
+            if not devices or len(devices) == 0:
                 logger.warning("No devices found")
                 return None
             
             # Get first device (usually only one sock)
-            device_data = devices[0]['device']
-            sock = Sock(self.api, device_data)
-            await sock.update_properties()
-            
-            logger.info(f"Fetched data for device: {device_data.get('dsn')}")
-            return sock
+            try:
+                device_data = devices[0].get('device') or devices[0]
+                if not device_data:
+                    logger.error(f"Invalid device data structure: {devices[0]}")
+                    return None
+                    
+                sock = Sock(self.api, device_data)
+                await sock.update_properties()
+                
+                logger.info(f"Fetched data for device: {device_data.get('dsn', 'unknown')}")
+                return sock
+            except Exception as e:
+                logger.error(f"Error processing device: {e}")
+                return None
+                
         except Exception as e:
             logger.error(f"Failed to fetch device data: {e}")
             return None
@@ -234,15 +256,16 @@ class OwletSyncService:
         """Main sync function"""
         logger.info("Starting Owlet sync...")
         
-        # Authenticate
-        if not await self.authenticate():
-            logger.error("Failed to authenticate with Owlet")
-            return False
+        # Authenticate (only needed if not already authenticated)
+        if not self.api:
+            if not await self.authenticate():
+                logger.error("Failed to authenticate with Owlet")
+                return False
         
         # Fetch device data
         sock = await self.fetch_device_data()
         if not sock:
-            logger.error("Failed to fetch device data")
+            logger.warning("Failed to fetch device data - will retry next sync")
             return False
         
         # Extract and save vital data
@@ -273,6 +296,18 @@ class OwletSyncService:
         logger.info("Sync completed successfully")
         return True
     
+    async def close(self):
+        """Close API session"""
+        if self.api:
+            try:
+                # Close the aiohttp session if it exists
+                if hasattr(self.api, 'session') and self.api.session:
+                    await self.api.session.close()
+                self.api = None
+                logger.info("API session closed")
+            except Exception as e:
+                logger.warning(f"Error closing API session: {e}")
+    
     async def run_service(self):
         """Run the service continuously"""
         sync_interval = self.config.get('sync_interval_minutes', 15)
@@ -280,14 +315,19 @@ class OwletSyncService:
         
         logger.info(f"Starting Owlet sync service (interval: {sync_interval} minutes)")
         
-        while True:
-            try:
-                await self.sync()
-            except Exception as e:
-                logger.error(f"Unexpected error during sync: {e}")
-            
-            logger.info(f"Next sync in {sync_interval} minutes")
-            await asyncio.sleep(sync_interval_seconds)
+        try:
+            while True:
+                try:
+                    await self.sync()
+                except Exception as e:
+                    logger.error(f"Unexpected error during sync: {e}")
+                
+                logger.info(f"Next sync in {sync_interval} minutes")
+                await asyncio.sleep(sync_interval_seconds)
+        except KeyboardInterrupt:
+            logger.info("Service interrupted by user")
+        finally:
+            await self.close()
 
 async def main():
     service = OwletSyncService()
