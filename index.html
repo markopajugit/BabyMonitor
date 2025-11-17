@@ -1969,7 +1969,7 @@
                     
                     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
                         <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages (Past 24h)</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; max-height: 400px; overflow-y: auto;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
                             ${hourlyAverages.map(hour => `
                                 <div style="display: flex; flex-direction: column; padding: 8px; background: ${hour.hasData ? '#f0f9ff' : '#f8fafc'}; border-radius: 6px; border-left: 3px solid ${hour.hasData ? '#0ea5e9' : '#e2e8f0'};">
                                     <span style="color: #64748b; font-weight: 600; margin-bottom: 4px;">${hour.time}</span>
