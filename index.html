@@ -1544,7 +1544,7 @@
                     
                     <div style="margin-top: 20px;">
                         <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Recent Readings</h3>
-                        <div style="max-height: 300px; overflow-y: auto;">
+                        <div>
                             ${vitals.slice(0, 20).map((vital, index) => {
                                 const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
                                     hour: '2-digit',
