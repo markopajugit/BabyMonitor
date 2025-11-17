@@ -1480,10 +1480,10 @@
             loadOwletData();
             setupOwletSwipeGesture();
             
-            // Auto-refresh vital data every 5 seconds (5000ms) instead of constantly
+            // Auto-refresh vital data every 1 second
             if (owletAutoRefreshInterval) clearTimeout(owletAutoRefreshInterval);
             const scheduleOwletRefresh = () => {
-                if (document.getElementById('owletView').classList.contains('asctive')) {
+                if (document.getElementById('owletView').classList.contains('active')) {
                     loadOwletData().finally(() => {
                         owletAutoRefreshInterval = setTimeout(scheduleOwletRefresh, 1000);
                     });
