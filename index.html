@@ -2033,8 +2033,10 @@
                             day: 'numeric',
                             year: 'numeric'
                         });
+                        
+                        // Handle both finalized daily summaries and today's in-progress hourly data
                         const dailyData = summary.daily;
-                        const alerts = dailyData.alerts;
+                        const alerts = dailyData?.alerts || { low_battery: 0, high_heart_rate: 0, low_oxygen: 0, disconnections: 0 };
                         const hasAlerts = alerts.low_battery || alerts.high_heart_rate || alerts.low_oxygen || alerts.disconnections;
                         const alertsText = [
                             alerts.low_battery ? `🔋 LowBat(${alerts.low_battery})` : '',
@@ -2043,12 +2045,39 @@
                             alerts.disconnections ? `📡 Disconn(${alerts.disconnections})` : ''
                         ].filter(a => a).join(' | ') || 'No alerts';
                         
+                        // Get HR and O2 data (from daily stats or calculate from hourly for today's data)
+                        let hrDisplay = 'N/A';
+                        let o2Display = 'N/A';
+                        
+                        if (dailyData) {
+                            hrDisplay = `${dailyData.heart_rate?.avg || 'N/A'} (${dailyData.heart_rate?.min || '?'}-${dailyData.heart_rate?.max || '?'})`;
+                            o2Display = `${dailyData.oxygen_saturation?.avg || 'N/A'}% (${dailyData.oxygen_saturation?.min || '?'}-${dailyData.oxygen_saturation?.max || '?'}%)`;
+                        } else if (summary.hourly && summary.hourly.length > 0) {
+                            // Calculate from hourly data for today's in-progress data
+                            const hrs = summary.hourly.map(h => h.heart_rate?.avg).filter(x => x !== null && x !== undefined);
+                            const o2s = summary.hourly.map(h => h.oxygen_saturation?.avg).filter(x => x !== null && x !== undefined);
+                            
+                            if (hrs.length > 0) {
+                                const avgHr = (hrs.reduce((a, b) => a + b, 0) / hrs.length).toFixed(0);
+                                const minHr = Math.min(...summary.hourly.map(h => h.heart_rate?.min).filter(x => x !== null && x !== undefined));
+                                const maxHr = Math.max(...summary.hourly.map(h => h.heart_rate?.max).filter(x => x !== null && x !== undefined));
+                                hrDisplay = `${avgHr} (${minHr}-${maxHr})`;
+                            }
+                            
+                            if (o2s.length > 0) {
+                                const avgO2 = (o2s.reduce((a, b) => a + b, 0) / o2s.length).toFixed(1);
+                                const minO2 = Math.min(...summary.hourly.map(h => h.oxygen_saturation?.min).filter(x => x !== null && x !== undefined));
+                                const maxO2 = Math.max(...summary.hourly.map(h => h.oxygen_saturation?.max).filter(x => x !== null && x !== undefined));
+                                o2Display = `${avgO2}% (${minO2}-${maxO2}%)`;
+                            }
+                        }
+                        
                         return `
                             <div style="display: flex; flex-direction: column; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; background: ${hasAlerts ? '#fef3c7' : '#f8fafc'};">
                                 <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">${dateStr}</div>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #64748b; margin-bottom: 6px;">
-                                    <div><strong>HR:</strong> ${dailyData.heart_rate?.avg || 'N/A'} (${dailyData.heart_rate?.min || '?'}-${dailyData.heart_rate?.max || '?'})</div>
-                                    <div><strong>O2:</strong> ${dailyData.oxygen_saturation?.avg || 'N/A'}% (${dailyData.oxygen_saturation?.min || '?'}-${dailyData.oxygen_saturation?.max || '?'}%)</div>
+                                    <div><strong>HR:</strong> ${hrDisplay}</div>
+                                    <div><strong>O2:</strong> ${o2Display}</div>
                                 </div>
                                 <div style="font-size: 10px; color: ${hasAlerts ? '#dc2626' : '#64748b'}; background: ${hasAlerts ? '#fecaca' : '#e2e8f0'}; padding: 4px 8px; border-radius: 4px;">
                                     ${alertsText}
