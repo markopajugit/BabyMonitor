@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=1.1">
     
     <title>Baby Monitor</title>
     <style>
@@ -1173,6 +1173,9 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // App version - increment this when you update files to force cache refresh
+        const APP_VERSION = '1.1';
+        
         // Initialize events array
         let events = [];
         let currentTimelineDate = new Date();
@@ -1284,7 +1287,7 @@
 
         // Load events from server
         function loadEvents() {
-            fetch('events.php')
+            fetch(`events.php?v=${APP_VERSION}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to load events');
@@ -1308,7 +1311,7 @@
 
         // Save single event to server
         function saveEvent(event) {
-            return fetch('events.php', {
+            return fetch(`events.php?v=${APP_VERSION}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2046,7 +2049,7 @@
         // Delete event
         function deleteEvent(eventId) {
             if (!confirm('Delete this event?')) return;
-            fetch('events.php', {
+            fetch(`events.php?v=${APP_VERSION}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: eventId })
