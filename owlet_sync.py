@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from pathlib import Path
 import requests
@@ -71,12 +71,19 @@ class OwletSyncService:
     def cleanup_old_vitals(self, vitals):
         """Remove vital signs older than retention period"""
         retention_hours = self.config.get('retention_hours', 48)
-        cutoff_time = datetime.utcnow() - timedelta(hours=retention_hours)
+        # Use timezone-aware UTC time for comparison
+        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=retention_hours)
         
         filtered = []
         for vital in vitals:
-            vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-            if vital_time > cutoff_time:
+            try:
+                # Parse timestamp and ensure it's timezone-aware
+                vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
+                if vital_time > cutoff_time:
+                    filtered.append(vital)
+            except Exception as e:
+                logger.warning(f"Could not parse vital timestamp: {vital.get('timestamp')}, {e}")
+                # Keep vital if we can't parse timestamp
                 filtered.append(vital)
         
         if len(filtered) < len(vitals):
@@ -175,8 +182,9 @@ class OwletSyncService:
         try:
             props = sock.properties if hasattr(sock, 'properties') else {}
             
+            # Use timezone-aware UTC time
             vital = {
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'heart_rate': props.get('heart_rate'),
                 'oxygen_level': props.get('oxygen_level'),
                 'movement': props.get('movement'),
@@ -239,7 +247,8 @@ class OwletSyncService:
             last_event = events[0]
             if last_event.get('type') == event_type:
                 last_time = datetime.fromisoformat(last_event.get('time', '').replace('Z', '+00:00'))
-                time_diff = datetime.utcnow() - last_time.replace(tzinfo=None)
+                now_utc = datetime.now(timezone.utc)
+                time_diff = now_utc - last_time
                 if time_diff.total_seconds() < 300:  # 5 minutes
                     logger.info(f"Skipping duplicate {event_type} event")
                     return False
@@ -252,12 +261,14 @@ class OwletSyncService:
     def create_event(self, event_type, icon, notes=""):
         """Create an event in the backend API"""
         try:
-            event_id = int(datetime.utcnow().timestamp() * 1000)
+            # Use timezone-aware UTC time
+            now_utc = datetime.now(timezone.utc)
+            event_id = int(now_utc.timestamp() * 1000)
             event_data = {
                 'id': event_id,
                 'type': event_type,
                 'icon': icon,
-                'time': datetime.utcnow().isoformat() + 'Z',
+                'time': now_utc.isoformat().replace('+00:00', 'Z'),
                 'notes': notes
             }
             
