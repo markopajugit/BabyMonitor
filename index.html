@@ -1138,12 +1138,19 @@
             </button>
             <h2>Owlet History</h2>
         </div>
-        <div style="padding: 20px; overflow-y: auto; height: calc(100% - 60px); box-sizing: border-box;">
-            <div id="owletHistoryContent">
-                <div class="empty-state">
-                    <div class="icon">📊</div>
-                    <h3>Loading history...</h3>
-                    <p>Please wait while we process your data</p>
+        <div class="timeline-container">
+            <div class="timeline-header">
+                <button class="date-nav-btn" onclick="navigateHistoryDate(-1)">←</button>
+                <div class="current-date" id="historyCurrentDate">Today</div>
+                <button class="date-nav-btn" onclick="navigateHistoryDate(1)">→</button>
+            </div>
+            <div style="padding: 0 20px 20px 20px; overflow-y: auto; flex: 1;">
+                <div id="owletHistoryContent">
+                    <div class="empty-state">
+                        <div class="icon">📊</div>
+                        <h3>Loading history...</h3>
+                        <p>Please wait while we process your data</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1238,6 +1245,7 @@
         // Initialize events array
         let events = [];
         let currentTimelineDate = new Date();
+        let currentHistoryDate = new Date();
 
         // Set current time as default
         function setDefaultTime() {
@@ -1803,6 +1811,9 @@
         function openOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.add('active');
             document.getElementById('owletView').classList.add('hidden');
+            // Initialize to today
+            currentHistoryDate = new Date();
+            updateHistoryDate();
             // Load history once without auto-refresh to ensure it completes
             loadOwletHistory();
             setupHistorySwipeGesture();
@@ -1817,6 +1828,27 @@
             if (owletHistoryAutoRefreshInterval) {
                 clearInterval(owletHistoryAutoRefreshInterval);
                 owletHistoryAutoRefreshInterval = null;
+            }
+        }
+        
+        function navigateHistoryDate(direction) {
+            currentHistoryDate.setDate(currentHistoryDate.getDate() + direction);
+            updateHistoryDate();
+            loadOwletHistory();
+        }
+        
+        function updateHistoryDate() {
+            const today = new Date();
+            const isToday = currentHistoryDate.toDateString() === today.toDateString();
+            const dateStr = isToday ? 'Today' : currentHistoryDate.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: currentHistoryDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+            });
+            const dateElement = document.getElementById('historyCurrentDate');
+            if (dateElement) {
+                dateElement.textContent = dateStr;
             }
         }
         
@@ -1864,8 +1896,35 @@
                     return;
                 }
                 
-                // Use the most recent day's data for statistics and hourly breakdown
-                const todaySummary = summaries[0];
+                // Find the summary for the selected date
+                const selectedDateStr = currentHistoryDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+                let selectedSummary = summaries.find(s => s.date === selectedDateStr);
+                
+                // If not found, try to find the closest available date
+                if (!selectedSummary) {
+                    // Try to find today's data (might be in-progress)
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    if (selectedDateStr === todayStr && summaries[0] && summaries[0].date === todayStr) {
+                        selectedSummary = summaries[0];
+                    } else {
+                        // Find the closest previous date
+                        selectedSummary = summaries.find(s => s.date <= selectedDateStr) || summaries[0];
+                    }
+                }
+                
+                if (!selectedSummary) {
+                    contentDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <h3>No Data for Selected Date</h3>
+                            <p>No historical data available for this date</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Use the selected day's data for statistics and hourly breakdown
+                const todaySummary = selectedSummary;
                 let dailyStats = todaySummary.daily;
                 
                 // If this is today's in-progress data (no daily stats yet), calculate from hourly
@@ -1940,12 +1999,43 @@
                 const totalSleepReadings = (dailyStats?.sleep?.asleep || 0) + (dailyStats?.sleep?.awake || 0);
                 const sleepPercentage = totalSleepReadings > 0 ? Math.round((dailyStats?.sleep?.asleep / totalSleepReadings) * 100) : 0;
                 
+                // Check if we're viewing today's summary or a past day's summary
+                const now = new Date();
+                const todayDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+                const summaryDateStr = todaySummary.date; // Should be in YYYY-MM-DD format
+                const isToday = summaryDateStr === todayDateStr;
+                
+                // Get current hour to determine which hours are from yesterday vs today (only for today's view)
+                const currentHour = now.getHours();
+                
+                // Get yesterday's date for formatting (only needed for today's view)
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
                 // Use hourly data from summary (already calculated server-side)
                 const hourlyAverages = todaySummary.hourly.map((hour, index) => {
-                    const nextHour = (index + 1) % 24;
-                    const timeRange = `${String(index).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`;
+                    // Format time display based on whether we're viewing today or a past day
+                    let timeDisplay;
+                    
+                    if (isToday) {
+                        // For today's view: show date + hour for hours > currentHour (yesterday), just hour for hours <= currentHour (today)
+                        const isYesterday = index > currentHour;
+                        if (isYesterday) {
+                            timeDisplay = `${yesterdayDateStr}, ${String(index).padStart(2, '0')}`;
+                        } else {
+                            timeDisplay = String(index).padStart(2, '0');
+                        }
+                    } else {
+                        // For past day's view: show all hours starting from 00
+                        timeDisplay = String(index).padStart(2, '0');
+                    }
+                    
                     return {
-                        time: timeRange,
+                        time: timeDisplay,
                         avgHR: hour.heart_rate?.avg !== null ? hour.heart_rate?.avg.toFixed(0) : 'N/A',
                         avgO2: hour.oxygen_saturation?.avg !== null ? hour.oxygen_saturation?.avg.toFixed(1) : 'N/A',
                         hasData: hour.data_points > 0
