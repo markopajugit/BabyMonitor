@@ -123,37 +123,45 @@ class OwletSyncService:
                 self.api = None
                 return None
             
-            if not devices or len(devices) == 0:
+            # Handle response wrapper (API returns {'response': [...]})
+            if isinstance(devices, dict) and 'response' in devices:
+                devices_list = devices['response']
+                logger.debug(f"Extracted devices from response wrapper: {len(devices_list)} device(s)")
+            else:
+                devices_list = devices
+            
+            if not devices_list or len(devices_list) == 0:
                 logger.warning("No devices found")
                 return None
             
             # Get first device (usually only one sock)
             try:
-                logger.debug(f"Device response structure: {devices[0]}")
+                logger.debug(f"First device structure: {devices_list[0]}")
                 
-                # Try different ways to access device data
-                if isinstance(devices[0], dict):
-                    device_data = devices[0].get('device') or devices[0]
+                # Extract device data
+                if isinstance(devices_list[0], dict) and 'device' in devices_list[0]:
+                    device_data = devices_list[0]['device']
+                    logger.debug(f"Extracted device from wrapper")
                 else:
-                    device_data = devices[0]
+                    device_data = devices_list[0]
                 
-                logger.debug(f"Extracted device data: {device_data}")
+                logger.debug(f"Device data: {device_data}")
                 
                 if not device_data:
-                    logger.error(f"Invalid device data structure: {devices[0]}")
+                    logger.error(f"Invalid device data")
                     return None
                 
-                # Log device data type for debugging
-                logger.debug(f"Device data type: {type(device_data)}")
-                
+                logger.info(f"Creating Sock object for device: {device_data.get('dsn', 'unknown')}")
                 sock = Sock(self.api, device_data)
+                
+                logger.debug(f"Updating sock properties...")
                 await sock.update_properties()
                 
-                logger.info(f"Fetched data for device: {device_data.get('dsn', 'unknown') if isinstance(device_data, dict) else 'device'}")
+                logger.info(f"Successfully fetched data for device: {device_data.get('dsn', 'unknown')}")
                 return sock
             except Exception as e:
                 logger.error(f"Error processing device: {e}")
-                logger.debug(f"Device list content: {devices}")
+                logger.debug(f"Devices content: {devices_list}")
                 import traceback
                 logger.debug(f"Full traceback: {traceback.format_exc()}")
                 return None
