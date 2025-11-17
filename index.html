@@ -1949,7 +1949,7 @@
                         <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Statistics</h3>
                             <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
                                 <strong>Data span:</strong> <span id="historyTimeSpan">${timeSpan}</span><br>
-                                <strong>Total readings:</strong> <span id="historyTotalReadings">${vitals.length}</span>
+                                <strong>Total readings:</strong> <span id="historyTotalReadings">${dailyStats?.data_points || 0}</span>
                             </div>
                         </div>
                         
