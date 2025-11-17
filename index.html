@@ -1804,12 +1804,12 @@
             document.getElementById('owletView').classList.add('hidden');
             loadOwletHistory();
             setupHistorySwipeGesture();
-            // Auto-refresh history every 1 second (1000ms)
+            // Auto-refresh history every 10 minutes (600000ms)
             if (owletHistoryAutoRefreshInterval) clearTimeout(owletHistoryAutoRefreshInterval);
             const scheduleHistoryRefresh = () => {
                 if (document.getElementById('owletHistoryView').classList.contains('active')) {
                     loadOwletHistory().finally(() => {
-                        owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 1000);
+                        owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 600000);
                     });
                 } else {
                     if (owletHistoryAutoRefreshInterval) {
@@ -1818,7 +1818,7 @@
                     }
                 }
             };
-            owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 1000);
+            owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 600000);
         }
         
         function closeOwletHistoryView() {
