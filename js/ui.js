@@ -2,6 +2,8 @@
 // UI.JS - UI utilities and view management
 // ============================================
 
+import { loadAndRenderEvents, updateTimelineDate, resetTimelineDate } from './events.js';
+
 // Show toast notification
 export function showToast(message) {
     const toast = document.getElementById('toast');
@@ -117,6 +119,12 @@ export function openDayTimelineView() {
     const gridContainer = document.getElementById('gridContainer');
     if (dayTimelineView) dayTimelineView.classList.add('active');
     if (gridContainer) gridContainer.classList.add('hidden');
+    
+    // Reset timeline date to today and load events
+    resetTimelineDate();
+    loadAndRenderEvents().then(() => {
+        updateTimelineDate();
+    });
 }
 
 export function closeDayTimelineView() {

@@ -173,8 +173,72 @@
             <h2>Day Timeline</h2>
         </div>
         <div class="timeline-container">
-            <div style="padding: 20px; text-align: center; color: #64748b;">
-                <p>Timeline view coming soon...</p>
+            <div class="timeline-header">
+                <button class="date-nav-btn" onclick="navigateDate(-1)">←</button>
+                <div class="current-date" id="currentDate">Today</div>
+                <button class="date-nav-btn" onclick="navigateDate(1)">→</button>
+            </div>
+            <div class="timeline" id="timeline">
+                <div class="no-events-timeline">
+                    <div class="icon">📅</div>
+                    <h3>No events for this day</h3>
+                    <p>Add events to see them on the timeline</p>
+                </div>
+            </div>
+            <div class="timeline-legend" id="timelineLegend" style="display: none;">
+                <div class="legend-item">
+                    <div class="legend-color sleep"></div>
+                    <span>Sleep Period</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color feed"></div>
+                    <span>Feed Period</span>
+                </div>
+            </div>
+            <div class="daily-stats" id="dailyStats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-icon sleep">😴</div>
+                    <div class="stat-details">
+                        <div class="stat-duration" id="sleepDuration">0h 0m</div>
+                        <div class="stat-label">Sleep</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon feed">🍼</div>
+                    <div class="stat-details">
+                        <div class="stat-duration" id="feedDuration">0h 0m</div>
+                        <div class="stat-label">Feeding</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon diaper">🩱</div>
+                    <div class="stat-details">
+                        <div class="stat-duration" id="diaperCount">0</div>
+                        <div class="stat-label">Diapers</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon other">📝</div>
+                    <div class="stat-details">
+                        <div class="stat-duration" id="totalEvents">0</div>
+                        <div class="stat-label">Total Events</div>
+                    </div>
+                </div>
+            </div>
+        
+        <!-- Day Events List -->
+        <div class="event-list" id="dayEventList"></div>
+            
+        </div>
+    </div>
+
+    <!-- Timeline Click Info -->
+    <div class="timeline-click-info" id="timelineClickInfo">
+        <h4 id="clickedTime">12:00:00</h4>
+        <div id="clickedEvents">
+            <div class="event-item">
+                <span>😴</span>
+                <span>Sleeping</span>
             </div>
         </div>
     </div>
