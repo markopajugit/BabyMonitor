@@ -66,6 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 try {
                     $latestData = file_get_contents($latestFile);
                     $latestReading = json_decode($latestData, true);
+                    
+                    // If history is empty but we have latest data, add it to vitals for display
+                    if (empty($vitals) && !empty($latestReading)) {
+                        $vitals = [$latestReading];
+                    }
                 } catch (Exception $e) {
                     // Latest file might not exist yet
                 }
