@@ -4,7 +4,7 @@
 
 import { setDefaultTime } from './utils.js';
 import { handleEventFormSubmit, loadAndRenderEvents, openEventModal, closeEventModal } from './events.js';
-import { openEventsView, closeEventsView, openMilestonesView, closeMilestonesView, openDayTimelineView, closeDayTimelineView } from './ui.js';
+import { openEventsView, closeEventsView, openMilestonesView, closeMilestonesView, openDayTimelineView, closeDayTimelineView, openOwletView, closeOwletView } from './ui.js';
 
 // Global app initialization
 document.addEventListener('DOMContentLoaded', function() {
@@ -35,4 +35,6 @@ window.openMilestonesView = openMilestonesView;
 window.closeMilestonesView = closeMilestonesView;
 window.openDayTimelineView = openDayTimelineView;
 window.closeDayTimelineView = closeDayTimelineView;
+window.openOwletView = openOwletView;
+window.closeOwletView = closeOwletView;
 

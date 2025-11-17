@@ -3,8 +3,8 @@
 // ============================================
 
 import { loadEvents as apiLoadEvents, saveEvent as apiSaveEvent, deleteEvent as apiDeleteEvent } from './api.js';
-import { showToast, openEventsView, closeEventsView, openMilestonesView, closeMilestonesView } from './ui.js';
-import { getIconMap, setDefaultTime, addPulseAnimation } from './utils.js';
+import { showToast, openEventsView, closeEventsView, openMilestonesView, closeMilestonesView, addPulseAnimation } from './ui.js';
+import { getIconMap, setDefaultTime } from './utils.js';
 
 let events = [];
 
