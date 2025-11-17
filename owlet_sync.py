@@ -182,24 +182,30 @@ class OwletSyncService:
         try:
             props = sock.properties if hasattr(sock, 'properties') else {}
             
-            # Debug: Log all available properties
-            logger.debug(f"Available properties keys: {list(props.keys())}")
-            logger.debug(f"Full properties: {props}")
-            
             # Use timezone-aware UTC time
             vital = {
                 'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
                 'heart_rate': props.get('heart_rate'),
-                'oxygen_level': props.get('oxygen_level') or props.get('oxy_level'),  # Try alternate key
+                'oxygen_saturation': props.get('oxygen_saturation'),
+                'oxygen_10_av': props.get('oxygen_10_av'),
                 'movement': props.get('movement'),
-                'battery': props.get('battery'),
-                'sock_connected': props.get('sock_on') or props.get('connected'),  # Try alternate keys
-                'low_battery': props.get('low_battery'),
-                'high_heart_rate': props.get('high_heart_rate'),
-                'low_oxygen': props.get('low_oxygen'),
+                'movement_bucket': props.get('movement_bucket'),
+                'battery_percentage': props.get('battery_percentage'),
+                'battery_minutes': props.get('battery_minutes'),
+                'signal_strength': props.get('signal_strength'),
+                'skin_temperature': props.get('skin_temperature'),
+                'sleep_state': props.get('sleep_state'),
+                'sock_connected': not props.get('sock_disconnected', False),  # True if NOT disconnected
+                'sock_on': not props.get('sock_off', False),  # True if NOT off
+                'low_battery': props.get('low_battery_alert'),
+                'high_heart_rate': props.get('high_heart_rate_alert'),
+                'low_oxygen': props.get('low_oxygen_alert'),
+                'charging': props.get('charging'),
+                'base_station_on': props.get('base_station_on'),
+                'skin_temp': props.get('skin_temperature'),
             }
             
-            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_level']}, Battery={vital['battery']}%, Connected={vital['sock_connected']}")
+            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_saturation']}%, Battery={vital['battery_percentage']}% ({vital['battery_minutes']} min), Connected={vital['sock_connected']}, Temp={vital['skin_temperature']}C")
             return vital
         except Exception as e:
             logger.error(f"Failed to extract vital data: {e}")
@@ -212,8 +218,9 @@ class OwletSyncService:
         try:
             props = sock.properties if hasattr(sock, 'properties') else {}
             
-            # First check if Owlet has native sleep detection
-            is_sleeping = props.get('sleeping', False)
+            # Check Owlet's sleep_state: 0=unknown, 1=awake, 2=asleep
+            sleep_state = props.get('sleep_state', 0)
+            is_sleeping = sleep_state == 2  # 2 means asleep
             
             # Enhanced detection: use heart rate and movement patterns
             if not is_sleeping and self.config.get('sleep_detection_enabled', True):

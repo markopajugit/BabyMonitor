@@ -1475,19 +1475,32 @@
                 };
                 
                 const hrStatus = getVitalStatus(latest_reading.heart_rate, 60, 160, 'HR');
-                const o2Status = getVitalStatus(latest_reading.oxygen_level, 95, 100, 'O2');
+                const o2Status = getVitalStatus(latest_reading.oxygen_saturation, 95, 100, 'O2');
                 
                 const heartRateDisplay = latest_reading.heart_rate !== null && latest_reading.heart_rate !== undefined 
                     ? latest_reading.heart_rate + ' bpm' 
                     : 'N/A';
-                const o2Display = latest_reading.oxygen_level !== null && latest_reading.oxygen_level !== undefined 
-                    ? latest_reading.oxygen_level + '%' 
+                const o2Display = latest_reading.oxygen_saturation !== null && latest_reading.oxygen_saturation !== undefined 
+                    ? latest_reading.oxygen_saturation + '%' 
                     : 'N/A';
-                const batteryDisplay = latest_reading.battery !== null && latest_reading.battery !== undefined 
-                    ? latest_reading.battery + '%' 
+                const batteryDisplay = latest_reading.battery_percentage !== null && latest_reading.battery_percentage !== undefined 
+                    ? latest_reading.battery_percentage + '%' 
+                    : 'N/A';
+                const batteryMinutesDisplay = latest_reading.battery_minutes !== null && latest_reading.battery_minutes !== undefined 
+                    ? Math.floor(latest_reading.battery_minutes / 60) + 'h ' + Math.floor(latest_reading.battery_minutes % 60) + 'm'
                     : 'N/A';
                 const movementDisplay = latest_reading.movement !== null && latest_reading.movement !== undefined 
                     ? latest_reading.movement 
+                    : 'N/A';
+                const signalDisplay = latest_reading.signal_strength !== null && latest_reading.signal_strength !== undefined 
+                    ? Math.round(latest_reading.signal_strength) + '%'
+                    : 'N/A';
+                const tempDisplay = latest_reading.skin_temperature !== null && latest_reading.skin_temperature !== undefined 
+                    ? latest_reading.skin_temperature + '°C'
+                    : 'N/A';
+                const sleepStateDisplay = latest_reading.sleep_state === 2 ? 'Asleep 😴' : latest_reading.sleep_state === 1 ? 'Awake 👀' : 'Unknown';
+                const o2AverageDisplay = latest_reading.oxygen_10_av !== null && latest_reading.oxygen_10_av !== undefined 
+                    ? latest_reading.oxygen_10_av + '%'
                     : 'N/A';
                 
                 statusDiv.innerHTML = `
@@ -1516,7 +1529,26 @@
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    ${batteryDisplay}
+                                </div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                    ${batteryMinutesDisplay} remaining
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Skin Temperature</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    ${tempDisplay}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
                                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
                                 <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
@@ -1525,9 +1557,25 @@
                             </div>
                             
                             <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Signal Strength</div>
                                 <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${batteryDisplay}
+                                    ${signalDisplay}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m)</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    ${o2AverageDisplay}
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Sleep Status</div>
+                                <div style="font-size: 16px; font-weight: 600; color: #1e293b;">
+                                    ${sleepStateDisplay}
                                 </div>
                             </div>
                         </div>
@@ -1551,12 +1599,25 @@
                                     minute: '2-digit'
                                 });
                                 const hrDisplay = vital.heart_rate !== null && vital.heart_rate !== undefined ? vital.heart_rate : 'N/A';
-                                const o2Display = vital.oxygen_level !== null && vital.oxygen_level !== undefined ? vital.oxygen_level : 'N/A';
+                                const o2Display = vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined ? vital.oxygen_saturation : 'N/A';
+                                const tempDisplay = vital.skin_temperature !== null && vital.skin_temperature !== undefined ? vital.skin_temperature : 'N/A';
+                                const movementDisplay = vital.movement !== null && vital.movement !== undefined ? vital.movement : 'N/A';
+                                const batteryDisplay = vital.battery_percentage !== null && vital.battery_percentage !== undefined ? vital.battery_percentage : 'N/A';
+                                const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 1 ? '👀' : '?';
                                 return `
-                                    <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; border-left: 3px solid #ec4899;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #ec4899;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                                             <strong>${time}</strong>
-                                            <span style="color: #64748b;">${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''} • ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
+                                            <span style="background: #f0f9ff; padding: 2px 6px; border-radius: 4px; color: #0369a1;">${sleepState}</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
+                                            <span>HR: ${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''}</span>
+                                            <span>O2: ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
+                                            <span>Temp: ${tempDisplay}${tempDisplay !== 'N/A' ? '°C' : ''}</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                            <span>Move: ${movementDisplay}</span>
+                                            <span>Batt: ${batteryDisplay}${batteryDisplay !== 'N/A' ? '%' : ''}</span>
                                         </div>
                                     </div>
                                 `;
