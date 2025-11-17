@@ -297,10 +297,6 @@
 
         /* Standalone PWA mode adjustments */
         @media all and (display-mode: standalone) {
-            .events-view {
-                padding-top: max(120px, env(safe-area-inset-top) + 80px);
-            }
-            
             .events-header {
                 padding-top: max(40px, env(safe-area-inset-top) + 40px);
             }
@@ -308,10 +304,6 @@
 
         /* Additional support for fullscreen mode */
         @media all and (display-mode: fullscreen) {
-            .events-view {
-                padding-top: max(120px, env(safe-area-inset-top) + 80px);
-            }
-            
             .events-header {
                 padding-top: max(40px, env(safe-area-inset-top) + 40px);
             }
@@ -320,10 +312,6 @@
         /* iOS specific adjustments for PWA mode */
         @supports (-webkit-touch-callout: none) {
             @media all and (display-mode: standalone) {
-                .events-view {
-                    padding-top: max(130px, env(safe-area-inset-top) + 90px);
-                }
-                
                 .events-header {
                     padding-top: max(50px, env(safe-area-inset-top) + 50px);
                 }
