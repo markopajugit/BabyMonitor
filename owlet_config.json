@@ -1,7 +1,7 @@
 {
   "email": "marinapaju92@gmail.com",
   "password": "blasonsimlen!",
-  "region": "europe-west-1",
+  "region": "europe",
   "sync_interval_minutes": 15,
   "retention_hours": 48,
   "auto_create_events": true,
