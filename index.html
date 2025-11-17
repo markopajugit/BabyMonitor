@@ -1930,7 +1930,7 @@
                     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
                         <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
                         <div>
-                            ${vitals.slice(-50).reverse().map((vital, index) => {
+                            ${vitals.slice(-50).map((vital, index) => {
                                 const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
                                     hour: '2-digit',
                                     minute: '2-digit'
