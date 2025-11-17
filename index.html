@@ -1419,6 +1419,7 @@
         let owletTouchStartX = 0;
         let owletTouchStartY = 0;
         let owletAutoRefreshInterval = null;
+        let owletHistoryAutoRefreshInterval = null;
         let lastAlertTime = {};
         
         function playAlertSound() {
@@ -1789,11 +1790,27 @@
             document.getElementById('owletView').classList.add('hidden');
             loadOwletHistory();
             setupHistorySwipeGesture();
+            // Auto-refresh history every 10 seconds
+            if (owletHistoryAutoRefreshInterval) clearInterval(owletHistoryAutoRefreshInterval);
+            owletHistoryAutoRefreshInterval = setInterval(() => {
+                if (document.getElementById('owletHistoryView').classList.contains('active')) {
+                    loadOwletHistory();
+                } else {
+                    if (owletHistoryAutoRefreshInterval) {
+                        clearInterval(owletHistoryAutoRefreshInterval);
+                        owletHistoryAutoRefreshInterval = null;
+                    }
+                }
+            }, 10000);
         }
         
         function closeOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.remove('active');
             document.getElementById('owletView').classList.remove('hidden');
+            if (owletHistoryAutoRefreshInterval) {
+                clearInterval(owletHistoryAutoRefreshInterval);
+                owletHistoryAutoRefreshInterval = null;
+            }
         }
         
         function setupHistorySwipeGesture() {
@@ -1912,8 +1929,8 @@
                     
                     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
                         <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
-                        <div style="max-height: 300px; overflow-y: auto;">
-                            ${vitals.slice(0, 50).reverse().map((vital, index) => {
+                        <div>
+                            ${vitals.slice(-50).reverse().map((vital, index) => {
                                 const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
                                     hour: '2-digit',
                                     minute: '2-digit'
