@@ -1480,7 +1480,7 @@
             loadOwletData();
             setupOwletSwipeGesture();
             
-            // Auto-refresh vital data every 10 seconds while view is open
+            // Auto-refresh vital data every 3 seconds while view is open
             if (owletAutoRefreshInterval) clearInterval(owletAutoRefreshInterval);
             owletAutoRefreshInterval = setInterval(() => {
                 if (document.getElementById('owletView').classList.contains('active')) {
@@ -1492,7 +1492,7 @@
                         owletAutoRefreshInterval = null;
                     }
                 }
-            }, 10000); // Refresh every 10 seconds
+            }, 3000); // Refresh every 3 seconds
         }
 
         function closeOwletView() {
@@ -1795,7 +1795,7 @@
             document.getElementById('owletView').classList.add('hidden');
             loadOwletHistory();
             setupHistorySwipeGesture();
-            // Auto-refresh history every 10 seconds
+            // Auto-refresh history every 3 seconds
             if (owletHistoryAutoRefreshInterval) clearInterval(owletHistoryAutoRefreshInterval);
             owletHistoryAutoRefreshInterval = setInterval(() => {
                 if (document.getElementById('owletHistoryView').classList.contains('active')) {
@@ -1806,7 +1806,7 @@
                         owletHistoryAutoRefreshInterval = null;
                     }
                 }
-            }, 10000);
+            }, 3000);
         }
         
         function closeOwletHistoryView() {
