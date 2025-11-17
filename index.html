@@ -1897,27 +1897,40 @@
                 const knownStateCount = asleepCount + awakeCount;
                 const sleepPercentage = knownStateCount > 0 ? Math.round((asleepCount / knownStateCount) * 100) : 0;
                 
-                // Calculate hourly averages
+                // Calculate hourly averages for past 24 hours
                 const hourlyData = {};
+                const now = new Date();
+                
+                // Initialize 24 hours (one for each hour of the day)
+                for (let i = 0; i < 24; i++) {
+                    hourlyData[i] = { hrs: [], o2s: [] };
+                }
+                
+                // Group vitals by hour of the day
                 vitals.forEach(vital => {
                     const date = new Date(vital.timestamp);
-                    const hourKey = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    if (!hourlyData[hourKey]) {
-                        hourlyData[hourKey] = { hrs: [], o2s: [] };
-                    }
+                    const hour = date.getHours();
+                    
                     if (vital.heart_rate !== null && vital.heart_rate !== undefined && !isNaN(vital.heart_rate)) {
-                        hourlyData[hourKey].hrs.push(parseFloat(vital.heart_rate));
+                        hourlyData[hour].hrs.push(parseFloat(vital.heart_rate));
                     }
                     if (vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined && !isNaN(vital.oxygen_saturation)) {
-                        hourlyData[hourKey].o2s.push(parseFloat(vital.oxygen_saturation));
+                        hourlyData[hour].o2s.push(parseFloat(vital.oxygen_saturation));
                     }
                 });
                 
-                const hourlyAverages = Object.entries(hourlyData).map(([time, data]) => ({
-                    time,
-                    avgHR: data.hrs.length > 0 ? (data.hrs.reduce((a, b) => a + b, 0) / data.hrs.length).toFixed(0) : 'N/A',
-                    avgO2: data.o2s.length > 0 ? (data.o2s.reduce((a, b) => a + b, 0) / data.o2s.length).toFixed(1) : 'N/A'
-                })).reverse();
+                // Create array of hourly averages with 24 entries
+                const hourlyAverages = Array.from({ length: 24 }, (_, i) => {
+                    const data = hourlyData[i];
+                    const nextHour = (i + 1) % 24;
+                    const timeRange = `${String(i).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`;
+                    return {
+                        time: timeRange,
+                        avgHR: data.hrs.length > 0 ? (data.hrs.reduce((a, b) => a + b, 0) / data.hrs.length).toFixed(0) : 'N/A',
+                        avgO2: data.o2s.length > 0 ? (data.o2s.reduce((a, b) => a + b, 0) / data.o2s.length).toFixed(1) : 'N/A',
+                        hasData: data.hrs.length > 0 || data.o2s.length > 0
+                    };
+                });
                 
                 contentDiv.innerHTML = `
                     <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
@@ -1955,14 +1968,14 @@
                     </div>
                     
                     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages</h3>
-                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages (Past 24h)</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; max-height: 400px; overflow-y: auto;">
                             ${hourlyAverages.map(hour => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
-                                    <span style="color: #64748b; font-weight: 500;">${hour.time}</span>
-                                    <div style="display: flex; gap: 16px; color: #475569;">
-                                        <span><strong>HR:</strong> ${hour.avgHR}</span>
-                                        <span><strong>O2:</strong> ${hour.avgO2}%</span>
+                                <div style="display: flex; flex-direction: column; padding: 8px; background: ${hour.hasData ? '#f0f9ff' : '#f8fafc'}; border-radius: 6px; border-left: 3px solid ${hour.hasData ? '#0ea5e9' : '#e2e8f0'};">
+                                    <span style="color: #64748b; font-weight: 600; margin-bottom: 4px;">${hour.time}</span>
+                                    <div style="color: #475569;">
+                                        <div><strong>HR:</strong> ${hour.avgHR}</div>
+                                        <div><strong>O2:</strong> ${hour.avgO2}%</div>
                                     </div>
                                 </div>
                             `).join('')}
