@@ -2,6 +2,7 @@
   "email": "marinapaju92@gmail.com",
   "password": "blasonsimlen!",
   "region": "europe",
+  "timezone": "Europe/Tallinn",
   "sync_interval_seconds": 0,
   "retention_hours": 48,
   "retention_enabled": false,

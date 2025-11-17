@@ -14,6 +14,12 @@ except ImportError:
     print("ERROR: pyowletapi not installed. Run: pip install pyowletapi requests")
     sys.exit(1)
 
+try:
+    import pytz
+except ImportError:
+    print("ERROR: pytz not installed. Run: pip install pytz")
+    sys.exit(1)
+
 # Setup logging
 logging.basicConfig(
     level=logging.DEBUG,  # Changed to DEBUG for detailed troubleshooting
@@ -43,6 +49,25 @@ class OwletSyncService:
         
         # Ensure daily summaries directory exists
         Path(self.daily_summaries_dir).mkdir(exist_ok=True)
+        
+        # Initialize timezone (default to UTC, can be overridden by config)
+        self.timezone = self._get_timezone()
+    
+    def _get_timezone(self):
+        """Get timezone from config or default to UTC"""
+        if not self.config:
+            return pytz.UTC
+        
+        timezone_str = self.config.get('timezone', 'UTC')
+        try:
+            return pytz.timezone(timezone_str)
+        except Exception as e:
+            logger.warning(f"Invalid timezone '{timezone_str}' in config, defaulting to UTC: {e}")
+            return pytz.UTC
+    
+    def get_local_time(self):
+        """Get current time in the configured timezone"""
+        return datetime.now(timezone.utc).astimezone(self.timezone)
         
     def load_config(self):
         """Load configuration from JSON file"""
@@ -132,9 +157,9 @@ class OwletSyncService:
         return filtered
     
     def get_daily_summary_filename(self, date=None):
-        """Get the filename for a daily summary based on date (UTC)"""
+        """Get the filename for a daily summary based on date (in the configured timezone)"""
         if date is None:
-            date = datetime.now(timezone.utc).date()
+            date = self.get_local_time().date()
         elif isinstance(date, datetime):
             date = date.date()
         
@@ -152,7 +177,9 @@ class OwletSyncService:
             for vital in vitals:
                 try:
                     vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-                    hour = vital_time.hour
+                    # Convert UTC time to local timezone for hour calculation
+                    vital_time_local = vital_time.astimezone(self.timezone)
+                    hour = vital_time_local.hour
                     hourly_vitals[hour].append(vital)
                 except Exception as e:
                     logger.warning(f"Could not parse vital timestamp for hourly aggregation: {vital.get('timestamp')}, {e}")
@@ -245,8 +272,17 @@ class OwletSyncService:
             temperatures = [v.get('skin_temperature') for v in vitals if v.get('skin_temperature') is not None]
             
             # Build final summary
+            # Determine date from the first (most recent) vital in local timezone
+            try:
+                first_vital_time = datetime.fromisoformat(vitals[0]['timestamp'].replace('Z', '+00:00'))
+                first_vital_local = first_vital_time.astimezone(self.timezone)
+                summary_date = first_vital_local.strftime('%Y-%m-%d')
+            except Exception as e:
+                logger.warning(f"Could not determine summary date, using UTC: {e}")
+                summary_date = vitals[0]['timestamp'][:10]
+            
             summary = {
-                'date': vitals[0]['timestamp'][:10],  # YYYY-MM-DD
+                'date': summary_date,  # YYYY-MM-DD in local timezone
                 'total_data_points': len(vitals),
                 'first_timestamp': vitals[-1]['timestamp'],  # Last one is oldest
                 'last_timestamp': vitals[0]['timestamp'],   # First one is newest
@@ -274,10 +310,10 @@ class OwletSyncService:
             return False
     
     def load_todays_hourly(self):
-        """Load today's hourly data from file"""
+        """Load today's hourly data from file (using configured timezone)"""
         if not os.path.exists(self.todays_hourly_file):
             return {
-                'date': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'date': self.get_local_time().strftime('%Y-%m-%d'),
                 'hourly': []
             }
         
@@ -285,7 +321,7 @@ class OwletSyncService:
             with open(self.todays_hourly_file, 'r') as f:
                 data = json.load(f)
                 # Verify it's today's data
-                today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+                today_str = self.get_local_time().strftime('%Y-%m-%d')
                 if data.get('date') != today_str:
                     # New day, reset
                     return {
@@ -296,7 +332,7 @@ class OwletSyncService:
         except Exception as e:
             logger.warning(f"Failed to load today's hourly data: {e}")
             return {
-                'date': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'date': self.get_local_time().strftime('%Y-%m-%d'),
                 'hourly': []
             }
     
@@ -312,8 +348,8 @@ class OwletSyncService:
             return False
     
     def should_update_hourly(self):
-        """Check if we should update today's hourly data (every hour)"""
-        current_time = datetime.now(timezone.utc)
+        """Check if we should update today's hourly data (every hour in the configured timezone)"""
+        current_time = self.get_local_time()
         
         if self.last_hourly_update_time is None:
             # First time, always update
@@ -328,9 +364,10 @@ class OwletSyncService:
         """
         Calculate and update today's hourly data.
         Gets the past hour of minute-by-minute history data and creates an hourly average.
+        Uses the configured timezone for hour calculations.
         """
         try:
-            current_time = datetime.now(timezone.utc)
+            current_time = self.get_local_time()
             current_hour = current_time.hour
             
             # Load history data
