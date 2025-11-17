@@ -993,14 +993,17 @@
 <body>
     <!-- Main Grid -->
     <div class="grid-container" id="gridContainer">
-        <button class="grid-btn btn-add" onclick="openModal()">
-            <span class="icon">➕</span>
-            <span>Add Event/Milestone</span>
+        <!-- Row 1: Owlet Monitor, View Day -->
+        <button class="grid-btn btn-owlet" onclick="openOwletView()">
+            <span class="icon">💓</span>
+            <span>Owlet Monitor</span>
         </button>
         <button class="grid-btn btn-view" onclick="openDayTimelineView()">
             <span class="icon">📅</span>
             <span>View Day</span>
         </button>
+        
+        <!-- Row 2: View Milestones/Events, Quick Diaper -->
         <button class="grid-btn btn-milestone" onclick="openMilestonesView()">
             <span class="icon">⭐</span>
             <span>View Milestones</span>
@@ -1009,6 +1012,8 @@
             <span class="icon">🩱</span>
             <span>Quick Diaper</span>
         </button>
+        
+        <!-- Row 3: Feed Start, Feed End -->
         <button class="grid-btn btn-feed" onclick="quickEvent('Feed Start', '🍼')">
             <span class="icon">🍼</span>
             <span>Feed Start</span>
@@ -1017,6 +1022,8 @@
             <span class="icon">🍼</span>
             <span>Feed End</span>
         </button>
+        
+        <!-- Row 4: Sleep Start, Sleep End -->
         <button class="grid-btn btn-sleep" onclick="quickEvent('Sleep Start', '😴')">
             <span class="icon">😴</span>
             <span>Sleep Start</span>
@@ -1024,10 +1031,6 @@
         <button class="grid-btn btn-sleep" onclick="quickEvent('Sleep End', '😴')">
             <span class="icon">😴</span>
             <span>Sleep End</span>
-        </button>
-        <button class="grid-btn btn-owlet" onclick="openOwletView()">
-            <span class="icon">💓</span>
-            <span>Owlet Monitor</span>
         </button>
     </div>
 
@@ -1631,10 +1634,12 @@
                 const tempDisplay = latest_reading.skin_temperature !== null && latest_reading.skin_temperature !== undefined 
                     ? latest_reading.skin_temperature + '°C'
                     : 'N/A';
-                // Sleep state: 0=unknown, 1=awake, 2=asleep
+                // Sleep state: 0=unknown, 1=awake, 2=asleep, 8=light sleep
                 let sleepStateDisplay = 'Unknown';
                 if (latest_reading.sleep_state === 2) {
                     sleepStateDisplay = 'Asleep 😴';
+                } else if (latest_reading.sleep_state === 8) {
+                    sleepStateDisplay = 'Light Sleep 💤';
                 } else if (latest_reading.sleep_state === 1) {
                     sleepStateDisplay = 'Awake 👀';
                 } else if (latest_reading.sleep_state === 0) {
@@ -1747,7 +1752,7 @@
                                 const tempDisplay = vital.skin_temperature !== null && vital.skin_temperature !== undefined ? vital.skin_temperature : 'N/A';
                                 const movementDisplay = vital.movement !== null && vital.movement !== undefined ? vital.movement : 'N/A';
                                 const batteryDisplay = vital.battery_percentage !== null && vital.battery_percentage !== undefined ? vital.battery_percentage : 'N/A';
-                                const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 1 ? '👀' : '?';
+                                const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 8 ? '💤' : vital.sleep_state === 1 ? '👀' : '?';
                                 return `
                                     <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #ec4899;">
                                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
@@ -1892,6 +1897,28 @@
                 const knownStateCount = asleepCount + awakeCount;
                 const sleepPercentage = knownStateCount > 0 ? Math.round((asleepCount / knownStateCount) * 100) : 0;
                 
+                // Calculate hourly averages
+                const hourlyData = {};
+                vitals.forEach(vital => {
+                    const date = new Date(vital.timestamp);
+                    const hourKey = date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    if (!hourlyData[hourKey]) {
+                        hourlyData[hourKey] = { hrs: [], o2s: [] };
+                    }
+                    if (vital.heart_rate !== null && vital.heart_rate !== undefined && !isNaN(vital.heart_rate)) {
+                        hourlyData[hourKey].hrs.push(parseFloat(vital.heart_rate));
+                    }
+                    if (vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined && !isNaN(vital.oxygen_saturation)) {
+                        hourlyData[hourKey].o2s.push(parseFloat(vital.oxygen_saturation));
+                    }
+                });
+                
+                const hourlyAverages = Object.entries(hourlyData).map(([time, data]) => ({
+                    time,
+                    avgHR: data.hrs.length > 0 ? (data.hrs.reduce((a, b) => a + b, 0) / data.hrs.length).toFixed(0) : 'N/A',
+                    avgO2: data.o2s.length > 0 ? (data.o2s.reduce((a, b) => a + b, 0) / data.o2s.length).toFixed(1) : 'N/A'
+                })).reverse();
+                
                 contentDiv.innerHTML = `
                     <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
                         <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Statistics</h3>
@@ -1927,10 +1954,25 @@
                         </div>
                     </div>
                     
+                    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                            ${hourlyAverages.map(hour => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
+                                    <span style="color: #64748b; font-weight: 500;">${hour.time}</span>
+                                    <div style="display: flex; gap: 16px; color: #475569;">
+                                        <span><strong>HR:</strong> ${hour.avgHR}</span>
+                                        <span><strong>O2:</strong> ${hour.avgO2}%</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
                     <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
                         <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
                         <div>
-                            ${vitals.slice(-50).map((vital, index) => {
+                            ${vitals.map((vital, index) => {
                                 const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
                                     hour: '2-digit',
                                     minute: '2-digit'
@@ -1941,6 +1983,7 @@
                                 });
                                 let sleepEmoji = '❓';
                                 if (vital.sleep_state === 2) sleepEmoji = '😴';
+                                else if (vital.sleep_state === 8) sleepEmoji = '💤';
                                 else if (vital.sleep_state === 1) sleepEmoji = '👀';
                                 else if (vital.sleep_state === 0) sleepEmoji = '◌';
                                 return `
