@@ -2022,11 +2022,6 @@
                     if (durationSinceFeedStart) {
                         intervalText = ` • ${durationSinceFeedStart}`;
                     }
-                } else if (event.type === 'Feed Start') {
-                    const intervalSinceFeedEnd = feedStartToInterval.get(event.id);
-                    if (intervalSinceFeedEnd) {
-                        intervalText = ` • ${intervalSinceFeedEnd}`;
-                    }
                 }
                 return `
                     <div class="event-item">
