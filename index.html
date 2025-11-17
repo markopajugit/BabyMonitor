@@ -1477,6 +1477,11 @@
         function openOwletView() {
             document.getElementById('owletView').classList.add('active');
             document.getElementById('gridContainer').classList.add('hidden');
+            
+            // Enable Owlet sync (create trigger file)
+            fetch('events.php?owlet_sync_trigger=enable')
+                .catch(err => console.error('Failed to enable Owlet sync:', err));
+            
             loadOwletData();
             setupOwletSwipeGesture();
             
@@ -1501,6 +1506,10 @@
         function closeOwletView() {
             document.getElementById('owletView').classList.remove('active');
             document.getElementById('gridContainer').classList.remove('hidden');
+            
+            // Disable Owlet sync (delete trigger file)
+            fetch('events.php?owlet_sync_trigger=disable')
+                .catch(err => console.error('Failed to disable Owlet sync:', err));
             
             // Stop auto-refresh when closing
             if (owletAutoRefreshInterval) {

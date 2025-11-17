@@ -209,6 +209,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         exit();
     }
     
+    // Handle Owlet sync trigger (enable/disable sync)
+    if (isset($_GET['owlet_sync_trigger'])) {
+        $triggerFile = 'owlet_sync_trigger.txt';
+        $action = $_GET['owlet_sync_trigger'];
+        
+        if ($action === 'enable') {
+            // Create trigger file to enable sync
+            if (file_put_contents($triggerFile, date('Y-m-d H:i:s')) !== false) {
+                echo json_encode(['success' => true, 'message' => 'Owlet sync enabled']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to enable sync']);
+            }
+        } elseif ($action === 'disable') {
+            // Delete trigger file to disable sync
+            if (file_exists($triggerFile)) {
+                if (unlink($triggerFile)) {
+                    echo json_encode(['success' => true, 'message' => 'Owlet sync disabled']);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to disable sync']);
+                }
+            } else {
+                // File doesn't exist, but that's fine - sync is already disabled
+                echo json_encode(['success' => true, 'message' => 'Owlet sync already disabled']);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid action. Use enable or disable']);
+        }
+        exit();
+    }
+    
     // Default: return all events
     $events = getEvents($eventsFile);
     echo json_encode($events);

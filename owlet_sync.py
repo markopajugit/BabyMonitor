@@ -46,6 +46,7 @@ class OwletSyncService:
         self.last_history_save_time = None  # Track last time we saved to history
         self.last_daily_cleanup_time = None  # Track last time we cleaned up old data
         self.last_hourly_update_time = None  # Track last time we updated today's hourly data
+        self.trigger_file = 'owlet_sync_trigger.txt'  # File that indicates Owlet view is open
         
         # Ensure daily summaries directory exists
         Path(self.daily_summaries_dir).mkdir(exist_ok=True)
@@ -882,8 +883,12 @@ class OwletSyncService:
             except Exception as e:
                 logger.warning(f"Error closing API session: {e}")
     
+    def is_sync_enabled(self):
+        """Check if sync should run (only when Owlet view is open)"""
+        return os.path.exists(self.trigger_file)
+    
     async def run_service(self):
-        """Run the service continuously"""
+        """Run the service continuously - only syncs when Owlet view is open"""
         # Support both minutes and seconds for flexibility
         if 'sync_interval_seconds' in self.config:
             sync_interval_seconds = self.config.get('sync_interval_seconds', 60)
@@ -893,22 +898,31 @@ class OwletSyncService:
             sync_interval_seconds = sync_interval * 60
             logger.info(f"Starting Owlet sync service (interval: {sync_interval} minutes = {sync_interval_seconds} seconds)")
         
+        logger.info("Service will only sync when Owlet monitor page is open (trigger file exists)")
+        
         try:
             while True:
-                try:
-                    # Wait for sync to complete before starting the next one
-                    # This prevents stacking calls
-                    await self.sync()
-                except Exception as e:
-                    logger.error(f"Unexpected error during sync: {e}")
-                
-                # Only sleep if sync_interval_seconds is > 0
-                if sync_interval_seconds > 0:
-                    logger.debug(f"Waiting {sync_interval_seconds} seconds before next sync")
-                    await asyncio.sleep(sync_interval_seconds)
+                # Check if sync is enabled (trigger file exists)
+                if self.is_sync_enabled():
+                    try:
+                        # Wait for sync to complete before starting the next one
+                        # This prevents stacking calls
+                        await self.sync()
+                    except Exception as e:
+                        logger.error(f"Unexpected error during sync: {e}")
+                    
+                    # Only sleep if sync_interval_seconds > 0
+                    if sync_interval_seconds > 0:
+                        logger.debug(f"Waiting {sync_interval_seconds} seconds before next sync")
+                        await asyncio.sleep(sync_interval_seconds)
+                    else:
+                        # If interval is 0, immediately start the next sync
+                        logger.debug("Starting next sync immediately (no delay)")
                 else:
-                    # If interval is 0, immediately start the next sync
-                    logger.debug("Starting next sync immediately (no delay)")
+                    # No trigger file - Owlet view is closed, wait before checking again
+                    check_interval = 5  # Check every 5 seconds if trigger file appears
+                    logger.debug(f"Owlet view is closed - waiting {check_interval} seconds before checking again")
+                    await asyncio.sleep(check_interval)
         except KeyboardInterrupt:
             logger.info("Service interrupted by user")
         finally:
