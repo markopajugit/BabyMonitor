@@ -1106,7 +1106,7 @@
     </div>
 
     <!-- Owlet Monitor View -->
-    <div class="events-view" id="owletView" style="touch-action: pan-y;">
+    <div class="events-view" id="owletView">
         <div class="events-header">
             <button class="back-btn" onclick="closeOwletView()">
                 <span>←</span>
@@ -1116,7 +1116,7 @@
                 <span style="font-size: 20px;">📊</span>
             </button>
         </div>
-        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;" id="owletContainer">
+        <div style="padding: 20px; overflow-y: auto; height: calc(100% - 60px); box-sizing: border-box;" id="owletContainer">
             <div id="owletStatus" style="margin-bottom: 20px;">
                 <div class="empty-state">
                     <div class="icon">💓</div>
@@ -1135,7 +1135,7 @@
             </button>
             <h2>Owlet History</h2>
         </div>
-        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+        <div style="padding: 20px; overflow-y: auto; height: calc(100% - 60px); box-sizing: border-box;" id="owletHistoryContainer">
             <div id="owletHistoryContent">
                 <div class="empty-state">
                     <div class="icon">📊</div>
@@ -1503,15 +1503,15 @@
         }
         
         function setupOwletSwipeGesture() {
-            const container = document.getElementById('owletContainer');
-            if (!container) return;
+            const view = document.getElementById('owletView');
+            if (!view) return;
             
-            container.addEventListener('touchstart', (e) => {
+            view.addEventListener('touchstart', (e) => {
                 owletTouchStartX = e.touches[0].clientX;
                 owletTouchStartY = e.touches[0].clientY;
             }, false);
             
-            container.addEventListener('touchend', (e) => {
+            view.addEventListener('touchend', (e) => {
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
                 
@@ -1639,7 +1639,7 @@
                 } else if (latest_reading.sleep_state === 0) {
                     sleepStateDisplay = 'Detecting...';
                 } else {
-                    logger.warn('Unknown sleep state:', latest_reading.sleep_state);
+                    console.warn('Unknown sleep state:', latest_reading.sleep_state);
                     sleepStateDisplay = 'Error (' + latest_reading.sleep_state + ')';
                 }
                 const o2AverageDisplay = latest_reading.oxygen_10_av !== null && latest_reading.oxygen_10_av !== undefined 
@@ -1797,15 +1797,15 @@
         }
         
         function setupHistorySwipeGesture() {
-            const container = document.getElementById('owletHistoryContent');
-            if (!container) return;
+            const view = document.getElementById('owletHistoryView');
+            if (!view) return;
             
-            container.addEventListener('touchstart', (e) => {
+            view.addEventListener('touchstart', (e) => {
                 historyTouchStartX = e.touches[0].clientX;
                 historyTouchStartY = e.touches[0].clientY;
             }, false);
             
-            container.addEventListener('touchend', (e) => {
+            view.addEventListener('touchend', (e) => {
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
                 
