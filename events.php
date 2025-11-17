@@ -110,10 +110,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (isset($_GET['summaries']) && $_GET['summaries'] === 'true') {
         // Return daily summary data for fast historical loading
         $summaries = getDailySummaries('owlet_daily_summaries', 30); // Get last 30 days
+        
+        // Include today's hourly data (in-progress day not yet finalized into summary)
+        $todaysHourly = getTodaysHourly('owlet_todays_hourly.json');
+        
+        // Prepend today's data if it has readings
+        if (!empty($todaysHourly['hourly'])) {
+            array_unshift($summaries, $todaysHourly);
+        }
+        
         $response = [
             'summaries' => $summaries,
             'total_days' => count($summaries),
-            'last_update' => !empty($summaries) ? $summaries[0]['last_timestamp'] : null
+            'last_update' => !empty($summaries) ? $summaries[0]['last_update'] ?? $summaries[0]['last_timestamp'] ?? null : null
         ];
         echo json_encode($response);
         exit();

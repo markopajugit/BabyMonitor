@@ -1857,26 +1857,79 @@
                 
                 // Use the most recent day's data for statistics and hourly breakdown
                 const todaySummary = summaries[0];
-                const dailyStats = todaySummary.daily;
+                let dailyStats = todaySummary.daily;
                 
-                const avgHR = dailyStats.heart_rate?.avg !== null ? dailyStats.heart_rate?.avg.toFixed(0) : 'N/A';
-                const minHR = dailyStats.heart_rate?.min !== null ? dailyStats.heart_rate?.min.toFixed(0) : 'N/A';
-                const maxHR = dailyStats.heart_rate?.max !== null ? dailyStats.heart_rate?.max.toFixed(0) : 'N/A';
+                // If this is today's in-progress data (no daily stats yet), calculate from hourly
+                if (!dailyStats && todaySummary.hourly) {
+                    const hourlyData = todaySummary.hourly;
+                    
+                    // Aggregate all hourly data for the day
+                    let aggregated = {
+                        heart_rate: { avg: null, min: null, max: null },
+                        oxygen_saturation: { avg: null, min: null, max: null },
+                        skin_temperature: { avg: null, min: null, max: null },
+                        sleep: { asleep: 0, awake: 0 },
+                        data_points: 0
+                    };
+                    
+                    if (hourlyData.length > 0) {
+                        const hrs = hourlyData.map(h => h.heart_rate?.avg).filter(x => x !== null && x !== undefined);
+                        const o2s = hourlyData.map(h => h.oxygen_saturation?.avg).filter(x => x !== null && x !== undefined);
+                        const temps = hourlyData.map(h => h.skin_temperature?.avg).filter(x => x !== null && x !== undefined);
+                        
+                        if (hrs.length > 0) {
+                            aggregated.heart_rate = {
+                                avg: hrs.reduce((a, b) => a + b, 0) / hrs.length,
+                                min: Math.min(...hourlyData.map(h => h.heart_rate?.min).filter(x => x !== null && x !== undefined)),
+                                max: Math.max(...hourlyData.map(h => h.heart_rate?.max).filter(x => x !== null && x !== undefined))
+                            };
+                        }
+                        
+                        if (o2s.length > 0) {
+                            aggregated.oxygen_saturation = {
+                                avg: o2s.reduce((a, b) => a + b, 0) / o2s.length,
+                                min: Math.min(...hourlyData.map(h => h.oxygen_saturation?.min).filter(x => x !== null && x !== undefined)),
+                                max: Math.max(...hourlyData.map(h => h.oxygen_saturation?.max).filter(x => x !== null && x !== undefined))
+                            };
+                        }
+                        
+                        if (temps.length > 0) {
+                            aggregated.skin_temperature = {
+                                avg: temps.reduce((a, b) => a + b, 0) / temps.length,
+                                min: Math.min(...hourlyData.map(h => h.skin_temperature?.min).filter(x => x !== null && x !== undefined)),
+                                max: Math.max(...hourlyData.map(h => h.skin_temperature?.max).filter(x => x !== null && x !== undefined))
+                            };
+                        }
+                        
+                        aggregated.sleep = {
+                            asleep: hourlyData.reduce((sum, h) => sum + (h.sleep?.asleep || 0), 0),
+                            awake: hourlyData.reduce((sum, h) => sum + (h.sleep?.awake || 0), 0)
+                        };
+                        
+                        aggregated.data_points = hourlyData.reduce((sum, h) => sum + (h.data_points || 0), 0);
+                    }
+                    
+                    dailyStats = aggregated;
+                }
                 
-                const avgO2 = dailyStats.oxygen_saturation?.avg !== null ? dailyStats.oxygen_saturation?.avg.toFixed(1) : 'N/A';
-                const minO2 = dailyStats.oxygen_saturation?.min !== null ? dailyStats.oxygen_saturation?.min.toFixed(1) : 'N/A';
-                const maxO2 = dailyStats.oxygen_saturation?.max !== null ? dailyStats.oxygen_saturation?.max.toFixed(1) : 'N/A';
+                const avgHR = dailyStats?.heart_rate?.avg !== null ? dailyStats?.heart_rate?.avg.toFixed(0) : 'N/A';
+                const minHR = dailyStats?.heart_rate?.min !== null ? dailyStats?.heart_rate?.min.toFixed(0) : 'N/A';
+                const maxHR = dailyStats?.heart_rate?.max !== null ? dailyStats?.heart_rate?.max.toFixed(0) : 'N/A';
                 
-                const avgTemp = dailyStats.skin_temperature?.avg !== null ? dailyStats.skin_temperature?.avg.toFixed(1) : 'N/A';
+                const avgO2 = dailyStats?.oxygen_saturation?.avg !== null ? dailyStats?.oxygen_saturation?.avg.toFixed(1) : 'N/A';
+                const minO2 = dailyStats?.oxygen_saturation?.min !== null ? dailyStats?.oxygen_saturation?.min.toFixed(1) : 'N/A';
+                const maxO2 = dailyStats?.oxygen_saturation?.max !== null ? dailyStats?.oxygen_saturation?.max.toFixed(1) : 'N/A';
+                
+                const avgTemp = dailyStats?.skin_temperature?.avg !== null ? dailyStats?.skin_temperature?.avg.toFixed(1) : 'N/A';
                 
                 // Calculate time span
-                const firstTime = new Date(todaySummary.first_timestamp);
-                const lastTime = new Date(todaySummary.last_timestamp);
+                const firstTime = new Date(todaySummary.first_timestamp || todaySummary.date + 'T00:00:00Z');
+                const lastTime = new Date(todaySummary.last_timestamp || new Date().toISOString());
                 const timeSpan = (lastTime - firstTime) / 60000 + ' min';
                 
                 // Calculate sleep percentage
-                const totalSleepReadings = dailyStats.sleep?.asleep + dailyStats.sleep?.awake;
-                const sleepPercentage = totalSleepReadings > 0 ? Math.round((dailyStats.sleep?.asleep / totalSleepReadings) * 100) : 0;
+                const totalSleepReadings = (dailyStats?.sleep?.asleep || 0) + (dailyStats?.sleep?.awake || 0);
+                const sleepPercentage = totalSleepReadings > 0 ? Math.round((dailyStats?.sleep?.asleep / totalSleepReadings) * 100) : 0;
                 
                 // Use hourly data from summary (already calculated server-side)
                 const hourlyAverages = todaySummary.hourly.map((hour, index) => {
