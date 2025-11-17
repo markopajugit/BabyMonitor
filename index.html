@@ -1655,128 +1655,174 @@
                     ? latest_reading.oxygen_10_av + '%'
                     : 'N/A';
                 
-                statusDiv.innerHTML = `
-                    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <div>
-                                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
-                                <div style="font-size: 11px; color: #10b981; margin-top: 2px;">🔄 Auto-updating every 3s</div>
-                            </div>
-                            <span style="font-size: 12px; color: #64748b; text-align: right;">Updated<br>${lastUpdateTime}</span>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#cbd5e1'};">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Heart Rate</div>
-                                <div style="font-size: 28px; font-weight: 600; color: ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#64748b'};">
-                                    ${heartRateDisplay}
+                // Check if container exists for first-time render
+                if (!document.getElementById('owletVitalsContainer')) {
+                    statusDiv.innerHTML = `
+                        <div id="owletVitalsContainer" style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div>
+                                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
                                 </div>
+                                <span id="owletUpdateTime" style="font-size: 12px; color: #64748b; text-align: right;">Updated<br>${lastUpdateTime}</span>
                             </div>
                             
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#cbd5e1'};">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Oxygen Level</div>
-                                <div style="font-size: 28px; font-weight: 600; color: ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b'};">
-                                    ${o2Display}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
-                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${batteryDisplay}
-                                </div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                    ${batteryMinutesDisplay} remaining
-                                </div>
-                            </div>
-                            
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Skin Temperature</div>
-                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${tempDisplay}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
-                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${movementDisplay}
-                                </div>
-                            </div>
-                            
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Signal Strength</div>
-                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${signalDisplay}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m)</div>
-                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                    ${o2AverageDisplay}
-                                </div>
-                            </div>
-                            
-                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Sleep Status</div>
-                                <div style="font-size: 16px; font-weight: 600; color: #1e293b;">
-                                    ${sleepStateDisplay}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                            <div style="font-size: 12px; color: #64748b;">
-                                Sock Connected: <strong style="color: ${latest_reading.sock_connected === true ? '#10b981' : '#ef4444'};">${latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown'}</strong>
-                            </div>
-                            ${latest_reading.low_oxygen === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>' : ''}
-                            ${latest_reading.high_heart_rate === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>' : ''}
-                            ${latest_reading.low_battery === true ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>' : ''}
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Recent Readings</h3>
-                        <div>
-                            ${vitals.slice(0, 20).map((vital, index) => {
-                                const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
-                                const hrDisplay = vital.heart_rate !== null && vital.heart_rate !== undefined ? vital.heart_rate : 'N/A';
-                                const o2Display = vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined ? vital.oxygen_saturation : 'N/A';
-                                const tempDisplay = vital.skin_temperature !== null && vital.skin_temperature !== undefined ? vital.skin_temperature : 'N/A';
-                                const movementDisplay = vital.movement !== null && vital.movement !== undefined ? vital.movement : 'N/A';
-                                const batteryDisplay = vital.battery_percentage !== null && vital.battery_percentage !== undefined ? vital.battery_percentage : 'N/A';
-                                const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 8 ? '💤' : vital.sleep_state === 1 ? '👀' : '?';
-                                return `
-                                    <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #ec4899;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                            <strong>${time}</strong>
-                                            <span style="background: #f0f9ff; padding: 2px 6px; border-radius: 4px; color: #0369a1;">${sleepState}</span>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
-                                            <span>HR: ${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''}</span>
-                                            <span>O2: ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
-                                            <span>Temp: ${tempDisplay}${tempDisplay !== 'N/A' ? '°C' : ''}</span>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                            <span>Move: ${movementDisplay}</span>
-                                            <span>Batt: ${batteryDisplay}${batteryDisplay !== 'N/A' ? '%' : ''}</span>
-                                        </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div id="owletHRCard" style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#cbd5e1'};">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Heart Rate</div>
+                                    <div id="owletHRValue" style="font-size: 28px; font-weight: 600; color: ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#64748b'};">
+                                        ${heartRateDisplay}
                                     </div>
-                                `;
-                            }).join('')}
+                                </div>
+                                
+                                <div id="owletO2Card" style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#cbd5e1'};">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Oxygen Level</div>
+                                    <div id="owletO2Value" style="font-size: 28px; font-weight: 600; color: ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b'};">
+                                        ${o2Display}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
+                                    <div id="owletBatteryValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${batteryDisplay}
+                                    </div>
+                                    <div id="owletBatteryMinutes" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                        ${batteryMinutesDisplay} remaining
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Skin Temperature</div>
+                                    <div id="owletTempValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${tempDisplay}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
+                                    <div id="owletMovementValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${movementDisplay}
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Signal Strength</div>
+                                    <div id="owletSignalValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${signalDisplay}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m)</div>
+                                    <div id="owletO2AvgValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${o2AverageDisplay}
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Sleep Status</div>
+                                    <div id="owletSleepValue" style="font-size: 16px; font-weight: 600; color: #1e293b;">
+                                        ${sleepStateDisplay}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="owletAlertsSection" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                                <div style="font-size: 12px; color: #64748b;">
+                                    Sock Connected: <strong id="owletSockStatus" style="color: ${latest_reading.sock_connected === true ? '#10b981' : '#ef4444'};">${latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown'}</strong>
+                                </div>
+                                <div id="owletAlerts"></div>
+                            </div>
                         </div>
-                    </div>
-                `;
+                        
+                        <div style="margin-top: 20px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Recent Readings</h3>
+                            <div id="owletRecentReadings">
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Update individual values
+                const updateElement = (id, value) => {
+                    const elem = document.getElementById(id);
+                    if (elem) elem.textContent = value;
+                };
+                
+                updateElement('owletUpdateTime', `Updated\n${lastUpdateTime}`);
+                updateElement('owletHRValue', heartRateDisplay);
+                updateElement('owletO2Value', o2Display);
+                updateElement('owletBatteryValue', batteryDisplay);
+                updateElement('owletBatteryMinutes', `${batteryMinutesDisplay} remaining`);
+                updateElement('owletTempValue', tempDisplay);
+                updateElement('owletMovementValue', movementDisplay);
+                updateElement('owletSignalValue', signalDisplay);
+                updateElement('owletO2AvgValue', o2AverageDisplay);
+                updateElement('owletSleepValue', sleepStateDisplay);
+                updateElement('owletSockStatus', latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown');
+                
+                // Update colors for HR and O2 cards
+                const hrCard = document.getElementById('owletHRCard');
+                const o2Card = document.getElementById('owletO2Card');
+                const hrValue = document.getElementById('owletHRValue');
+                const o2Value = document.getElementById('owletO2Value');
+                const sockStatus = document.getElementById('owletSockStatus');
+                
+                if (hrCard) hrCard.style.borderLeftColor = hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#cbd5e1';
+                if (o2Card) o2Card.style.borderLeftColor = o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#cbd5e1';
+                if (hrValue) hrValue.style.color = hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#64748b';
+                if (o2Value) o2Value.style.color = o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b';
+                if (sockStatus) sockStatus.style.color = latest_reading.sock_connected === true ? '#10b981' : '#ef4444';
+                
+                // Update alerts
+                const alertsDiv = document.getElementById('owletAlerts');
+                if (alertsDiv) {
+                    let alertsHTML = '';
+                    if (latest_reading.low_oxygen === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>';
+                    if (latest_reading.high_heart_rate === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>';
+                    if (latest_reading.low_battery === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>';
+                    alertsDiv.innerHTML = alertsHTML;
+                }
+                
+                // Update recent readings
+                const recentReadingsDiv = document.getElementById('owletRecentReadings');
+                if (recentReadingsDiv) {
+                    recentReadingsDiv.innerHTML = vitals.slice(0, 20).map((vital, index) => {
+                        const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const hrDisplay = vital.heart_rate !== null && vital.heart_rate !== undefined ? vital.heart_rate : 'N/A';
+                        const o2Display = vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined ? vital.oxygen_saturation : 'N/A';
+                        const tempDisplay = vital.skin_temperature !== null && vital.skin_temperature !== undefined ? vital.skin_temperature : 'N/A';
+                        const movementDisplay = vital.movement !== null && vital.movement !== undefined ? vital.movement : 'N/A';
+                        const batteryDisplay = vital.battery_percentage !== null && vital.battery_percentage !== undefined ? vital.battery_percentage : 'N/A';
+                        const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 8 ? '💤' : vital.sleep_state === 1 ? '👀' : '?';
+                        return `
+                            <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #ec4899;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <strong>${time}</strong>
+                                    <span style="background: #f0f9ff; padding: 2px 6px; border-radius: 4px; color: #0369a1;">${sleepState}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
+                                    <span>HR: ${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''}</span>
+                                    <span>O2: ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
+                                    <span>Temp: ${tempDisplay}${tempDisplay !== 'N/A' ? '°C' : ''}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                    <span>Move: ${movementDisplay}</span>
+                                    <span>Batt: ${batteryDisplay}${batteryDisplay !== 'N/A' ? '%' : ''}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             } catch (error) {
                 console.error('Error loading Owlet data:', error);
                 statusDiv.innerHTML = `
@@ -1938,90 +1984,120 @@
                     };
                 });
                 
-                contentDiv.innerHTML = `
-                    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Statistics</h3>
-                        <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
-                            <strong>Data span:</strong> ${timeSpan}<br>
-                            <strong>Total readings:</strong> ${vitals.length}
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                        <div style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
-                            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Heart Rate</div>
-                            <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
-                            <div style="font-size: 11px; opacity: 0.8;">Min: ${minHR} | Max: ${maxHR}</div>
+                // Check if container exists for first-time render
+                if (!document.getElementById('owletHistoryContainer')) {
+                    contentDiv.innerHTML = `
+                        <div id="owletHistoryContainer" style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Statistics</h3>
+                            <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
+                                <strong>Data span:</strong> <span id="historyTimeSpan">${timeSpan}</span><br>
+                                <strong>Total readings:</strong> <span id="historyTotalReadings">${vitals.length}</span>
+                            </div>
                         </div>
                         
-                        <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
-                            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Oxygen Level</div>
-                            <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
-                            <div style="font-size: 11px; opacity: 0.8;">Min: ${minO2}% | Max: ${maxO2}%</div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                        <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0f9ff;">
-                            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Avg Temperature</div>
-                            <div style="font-size: 24px; font-weight: 600; color: #1e293b;">${avgTemp}°C</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Heart Rate</div>
+                                <div id="historyAvgHR" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
+                                <div style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinHR">${minHR}</span> | Max: <span id="historyMaxHR">${maxHR}</span></div>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Oxygen Level</div>
+                                <div id="historyAvgO2" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
+                                <div style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinO2">${minO2}</span>% | Max: <span id="historyMaxO2">${maxO2}</span>%</div>
+                            </div>
                         </div>
                         
-                        <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0fdf4;">
-                            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Sleep Time</div>
-                            <div style="font-size: 24px; font-weight: 600; color: #1e293b;">${sleepPercentage}%</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0f9ff;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Avg Temperature</div>
+                                <div id="historyAvgTemp" style="font-size: 24px; font-weight: 600; color: #1e293b;">${avgTemp}°C</div>
+                            </div>
+                            
+                            <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0fdf4;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Sleep Time</div>
+                                <div id="historySleepPercentage" style="font-size: 24px; font-weight: 600; color: #1e293b;">${sleepPercentage}%</div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages (Past 24h)</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
-                            ${hourlyAverages.map(hour => `
-                                <div style="display: flex; flex-direction: column; padding: 8px; background: ${hour.hasData ? '#f0f9ff' : '#f8fafc'}; border-radius: 6px; border-left: 3px solid ${hour.hasData ? '#0ea5e9' : '#e2e8f0'};">
-                                    <span style="color: #64748b; font-weight: 600; margin-bottom: 4px;">${hour.time}</span>
-                                    <div style="color: #475569;">
-                                        <div><strong>HR:</strong> ${hour.avgHR}</div>
-                                        <div><strong>O2:</strong> ${hour.avgO2}%</div>
-                                    </div>
+                        
+                        <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages (Past 24h)</h3>
+                            <div id="historyHourlyContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                            </div>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
+                            <div id="historyTimelineContainer">
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Update individual values
+                const updateElement = (id, value) => {
+                    const elem = document.getElementById(id);
+                    if (elem) elem.textContent = value;
+                };
+                
+                updateElement('historyTimeSpan', timeSpan);
+                updateElement('historyTotalReadings', vitals.length);
+                updateElement('historyAvgHR', avgHR);
+                updateElement('historyMinHR', minHR);
+                updateElement('historyMaxHR', maxHR);
+                updateElement('historyAvgO2', avgO2 + '%');
+                updateElement('historyMinO2', minO2);
+                updateElement('historyMaxO2', maxO2);
+                updateElement('historyAvgTemp', avgTemp + '°C');
+                updateElement('historySleepPercentage', sleepPercentage + '%');
+                
+                // Update hourly averages
+                const hourlyContainer = document.getElementById('historyHourlyContainer');
+                if (hourlyContainer) {
+                    hourlyContainer.innerHTML = hourlyAverages.map(hour => `
+                        <div style="display: flex; flex-direction: column; padding: 8px; background: ${hour.hasData ? '#f0f9ff' : '#f8fafc'}; border-radius: 6px; border-left: 3px solid ${hour.hasData ? '#0ea5e9' : '#e2e8f0'};">
+                            <span style="color: #64748b; font-weight: 600; margin-bottom: 4px;">${hour.time}</span>
+                            <div style="color: #475569;">
+                                <div><strong>HR:</strong> ${hour.avgHR}</div>
+                                <div><strong>O2:</strong> ${hour.avgO2}%</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Update timeline
+                const timelineContainer = document.getElementById('historyTimelineContainer');
+                if (timelineContainer) {
+                    timelineContainer.innerHTML = vitals.map((vital, index) => {
+                        const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const date = new Date(vital.timestamp).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        let sleepEmoji = '❓';
+                        if (vital.sleep_state === 2) sleepEmoji = '😴';
+                        else if (vital.sleep_state === 8) sleepEmoji = '💤';
+                        else if (vital.sleep_state === 1) sleepEmoji = '👀';
+                        else if (vital.sleep_state === 0) sleepEmoji = '◌';
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+                                <div>
+                                    <strong>${time}</strong>
+                                    <div style="color: #94a3b8; font-size: 11px;">${date}</div>
                                 </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
-                        <div>
-                            ${vitals.map((vital, index) => {
-                                const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
-                                const date = new Date(vital.timestamp).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric'
-                                });
-                                let sleepEmoji = '❓';
-                                if (vital.sleep_state === 2) sleepEmoji = '😴';
-                                else if (vital.sleep_state === 8) sleepEmoji = '💤';
-                                else if (vital.sleep_state === 1) sleepEmoji = '👀';
-                                else if (vital.sleep_state === 0) sleepEmoji = '◌';
-                                return `
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
-                                        <div>
-                                            <strong>${time}</strong>
-                                            <div style="color: #94a3b8; font-size: 11px;">${date}</div>
-                                        </div>
-                                        <div style="display: flex; gap: 12px; color: #64748b; font-size: 11px;">
-                                            <span>HR: ${vital.heart_rate || 'N/A'}</span>
-                                            <span>O2: ${vital.oxygen_saturation || 'N/A'}%</span>
-                                            <span>${sleepEmoji}</span>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
+                                <div style="display: flex; gap: 12px; color: #64748b; font-size: 11px;">
+                                    <span>HR: ${vital.heart_rate || 'N/A'}</span>
+                                    <span>O2: ${vital.oxygen_saturation || 'N/A'}%</span>
+                                    <span>${sleepEmoji}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             } catch (error) {
                 console.error('Error loading history:', error);
                 contentDiv.innerHTML = `
