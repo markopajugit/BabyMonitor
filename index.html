@@ -337,14 +337,14 @@
             display: flex;
             align-items: center;
             margin-bottom: 25px;
-            position: fixed;
+            position: sticky;
             top: 0;
             left: 0;
             right: 0;
             background: var(--bg);
             padding: 20px;
             padding-top: max(20px, env(safe-area-inset-top) + 20px);
-            z-index: 10;
+            z-index: 100;
             box-shadow: var(--shadow);
         }
 
@@ -554,6 +554,7 @@
             padding: 20px 10px;
             min-height: calc(100vh - 120px);
             overflow-x: auto;
+            padding-top: 0;
         }
 
         .timeline-header {
@@ -1458,7 +1459,10 @@
             
             // Populate the form with event data
             document.getElementById('eventType').value = event.type;
-            document.getElementById('eventTime').value = new Date(event.time).toISOString().slice(0, 16);
+            // Convert UTC time to local time for datetime-local input
+            const eventDate = new Date(event.time);
+            eventDate.setMinutes(eventDate.getMinutes() - eventDate.getTimezoneOffset());
+            document.getElementById('eventTime').value = eventDate.toISOString().slice(0, 16);
             document.getElementById('eventNotes').value = event.notes || '';
             
             // Store the event ID for updating
@@ -1512,6 +1516,52 @@
                 e.preventDefault();
             }
         }, { passive: false });
+
+        // Swipe to go back gesture
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            // Only track swipe if a view is active
+            const eventsView = document.getElementById('eventsView');
+            const milestonesView = document.getElementById('milestonesView');
+            const dayTimelineView = document.getElementById('dayTimelineView');
+            
+            const isViewActive = (eventsView && eventsView.classList.contains('active')) ||
+                                 (milestonesView && milestonesView.classList.contains('active')) ||
+                                 (dayTimelineView && dayTimelineView.classList.contains('active'));
+            
+            if (isViewActive && e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, false);
+
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            
+            const horizontalDistance = touchEndX - touchStartX;
+            const verticalDistance = Math.abs(touchEndY - touchStartY);
+            
+            // Threshold for swipe detection: 100px horizontal movement with less vertical movement
+            if (horizontalDistance > 100 && verticalDistance < 50) {
+                const eventsView = document.getElementById('eventsView');
+                const milestonesView = document.getElementById('milestonesView');
+                const dayTimelineView = document.getElementById('dayTimelineView');
+                
+                // Right-to-left swipe (positive X movement)
+                if (eventsView && eventsView.classList.contains('active')) {
+                    closeEventsView();
+                } else if (milestonesView && milestonesView.classList.contains('active')) {
+                    closeMilestonesView();
+                } else if (dayTimelineView && dayTimelineView.classList.contains('active')) {
+                    closeDayTimelineView();
+                }
+            }
+        }, false);
 
         // Day Timeline Functions
         function openDayTimelineView() {
