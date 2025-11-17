@@ -321,7 +321,9 @@ class OwletSyncService:
         if vital:
             vitals = self.load_vitals()
             vitals.insert(0, vital)  # Add to front (most recent first)
-            vitals = self.cleanup_old_vitals(vitals)
+            # Only cleanup old vitals if retention is enabled
+            if self.config.get('retention_enabled', True):
+                vitals = self.cleanup_old_vitals(vitals)
             self.save_vitals(vitals)
         
         # Detect sleep state and create events if needed
@@ -370,12 +372,19 @@ class OwletSyncService:
         try:
             while True:
                 try:
+                    # Wait for sync to complete before starting the next one
+                    # This prevents stacking calls
                     await self.sync()
                 except Exception as e:
                     logger.error(f"Unexpected error during sync: {e}")
                 
-                logger.info(f"Next sync in {sync_interval_seconds} seconds")
-                await asyncio.sleep(sync_interval_seconds)
+                # Only sleep if sync_interval_seconds is > 0
+                if sync_interval_seconds > 0:
+                    logger.debug(f"Waiting {sync_interval_seconds} seconds before next sync")
+                    await asyncio.sleep(sync_interval_seconds)
+                else:
+                    # If interval is 0, immediately start the next sync
+                    logger.debug("Starting next sync immediately (no delay)")
         except KeyboardInterrupt:
             logger.info("Service interrupted by user")
         finally:
