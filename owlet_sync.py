@@ -16,7 +16,7 @@ except ImportError:
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # Changed to DEBUG for detailed troubleshooting
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('owlet_sync.log'),
@@ -129,18 +129,33 @@ class OwletSyncService:
             
             # Get first device (usually only one sock)
             try:
-                device_data = devices[0].get('device') or devices[0]
+                logger.debug(f"Device response structure: {devices[0]}")
+                
+                # Try different ways to access device data
+                if isinstance(devices[0], dict):
+                    device_data = devices[0].get('device') or devices[0]
+                else:
+                    device_data = devices[0]
+                
+                logger.debug(f"Extracted device data: {device_data}")
+                
                 if not device_data:
                     logger.error(f"Invalid device data structure: {devices[0]}")
                     return None
-                    
+                
+                # Log device data type for debugging
+                logger.debug(f"Device data type: {type(device_data)}")
+                
                 sock = Sock(self.api, device_data)
                 await sock.update_properties()
                 
-                logger.info(f"Fetched data for device: {device_data.get('dsn', 'unknown')}")
+                logger.info(f"Fetched data for device: {device_data.get('dsn', 'unknown') if isinstance(device_data, dict) else 'device'}")
                 return sock
             except Exception as e:
                 logger.error(f"Error processing device: {e}")
+                logger.debug(f"Device list content: {devices}")
+                import traceback
+                logger.debug(f"Full traceback: {traceback.format_exc()}")
                 return None
                 
         except Exception as e:
