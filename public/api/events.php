@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit();
 }
 
-$eventsFile = 'events.json';
+$eventsFile = __DIR__ . '/../../events.json';
 
 // ============================================
 // UTILITY FUNCTIONS - File I/O & Responses

@@ -6,7 +6,7 @@ import { APP_VERSION } from './utils.js';
 
 // Load all events from server
 export function loadEvents() {
-    return fetch(`events.php?v=${APP_VERSION}`)
+    return fetch(`api/events.php?v=${APP_VERSION}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to load events');
@@ -21,7 +21,7 @@ export function loadEvents() {
 
 // Save single event to server
 export function saveEvent(event) {
-    return fetch(`events.php?v=${APP_VERSION}`, {
+    return fetch(`api/events.php?v=${APP_VERSION}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export function saveEvent(event) {
 
 // Delete event from server
 export function deleteEvent(eventId) {
-    return fetch(`events.php?v=${APP_VERSION}`, {
+    return fetch(`api/events.php?v=${APP_VERSION}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: eventId })
@@ -66,7 +66,7 @@ export function deleteEvent(eventId) {
 
 // Get Owlet vitals data
 export function getOwletVitals() {
-    return fetch('events.php?vitals=true')
+    return fetch('api/events.php?vitals=true')
         .then(response => {
             if (!response.ok) throw new Error('Failed to fetch vitals');
             return response.json();
@@ -79,7 +79,7 @@ export function getOwletVitals() {
 
 // Get Owlet latest reading
 export function getOwletLatest() {
-    return fetch('events.php?latest=true')
+    return fetch('api/events.php?latest=true')
         .then(response => {
             if (!response.ok) throw new Error('Failed to fetch latest');
             return response.json();
@@ -92,7 +92,7 @@ export function getOwletLatest() {
 
 // Get Owlet summaries
 export function getOwletSummaries() {
-    return fetch('events.php?summaries=true')
+    return fetch('api/events.php?summaries=true')
         .then(response => {
             if (!response.ok) throw new Error('Failed to fetch summaries');
             return response.json();
@@ -105,7 +105,7 @@ export function getOwletSummaries() {
 
 // Get today's hourly data
 export function getTodaysHourly() {
-    return fetch('events.php?todays_hourly=true')
+    return fetch('api/events.php?todays_hourly=true')
         .then(response => {
             if (!response.ok) throw new Error('Failed to fetch today\'s hourly');
             return response.json();
