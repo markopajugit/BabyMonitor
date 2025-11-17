@@ -1,0 +1,452 @@
+/* ============================================
+   COMPONENTS.CSS - UI elements and components
+   ============================================ */
+
+/* ============================================
+   GRID BUTTONS
+   ============================================ */
+
+.grid-btn {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--white);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.grid-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.grid-btn.pulse::before {
+    width: 300px;
+    height: 300px;
+}
+
+.grid-btn:active {
+    filter: brightness(0.9);
+}
+
+.grid-btn:hover {
+    filter: brightness(1.1);
+}
+
+.grid-btn .icon {
+    font-size: 40px;
+}
+
+.btn-add { background: linear-gradient(135deg, var(--primary), #4f46e5); }
+.btn-view { background: linear-gradient(135deg, var(--view), #0284c7); }
+.btn-feed { background: linear-gradient(135deg, var(--feed), #db2777); }
+.btn-sleep { background: linear-gradient(135deg, var(--sleep), #7c3aed); }
+.btn-diaper { background: linear-gradient(135deg, var(--diaper), #d97706); }
+.btn-milestone { background: linear-gradient(135deg, var(--milestone), #059669); }
+.btn-owlet { background: linear-gradient(135deg, #ec4899, #e91e63); }
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+    touch-action: auto;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    margin-bottom: 25px;
+}
+
+.modal-header h2 {
+    font-size: 24px;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.modal-header p {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.form-group select,
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.form-group select:focus,
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: var(--text);
+}
+
+/* ============================================
+   EVENTS VIEW
+   ============================================ */
+
+.events-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Standalone PWA mode adjustments */
+@media all and (display-mode: standalone) {
+    .events-header {
+        padding-top: max(40px, env(safe-area-inset-top) + 40px);
+    }
+}
+
+/* Additional support for fullscreen mode */
+@media all and (display-mode: fullscreen) {
+    .events-header {
+        padding-top: max(40px, env(safe-area-inset-top) + 40px);
+    }
+}
+
+/* iOS specific adjustments for PWA mode */
+@supports (-webkit-touch-callout: none) {
+    @media all and (display-mode: standalone) {
+        .events-header {
+            padding-top: max(50px, env(safe-area-inset-top) + 50px);
+        }
+    }
+}
+
+.events-view.active {
+    transform: translateX(0);
+}
+
+.events-header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top) + 20px);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.back-btn {
+    background: var(--white);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-right: 15px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease;
+}
+
+.back-btn:active {
+    transform: scale(0.95);
+}
+
+.events-header h2 {
+    font-size: 24px;
+    color: var(--text);
+}
+
+.event-list {
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+    flex: 1;
+    padding: 20px;
+    overflow-y: visible;
+}
+
+/* ============================================
+   EVENT ITEMS
+   ============================================ */
+
+.event-item {
+    background: var(--white);
+    padding: 20px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    animation: slideInUp 0.3s ease;
+}
+
+#dayEventList {
+    margin-top: 20px;
+}
+
+#dayEventList .event-item {
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.event-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.event-icon.feed { background: linear-gradient(135deg, var(--feed), #db2777); }
+.event-icon.sleep { background: linear-gradient(135deg, var(--sleep), #7c3aed); }
+.event-icon.diaper { background: linear-gradient(135deg, var(--diaper), #d97706); }
+.event-icon.milestone { background: linear-gradient(135deg, var(--milestone), #059669); }
+.event-icon.custom { background: linear-gradient(135deg, var(--primary), #4f46e5); }
+
+.event-details {
+    flex: 1;
+}
+
+.event-type {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.event-time {
+    color: var(--text-light);
+    font-size: 14px;
+}
+
+.event-notes {
+    margin-top: 8px;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+}
+
+.empty-state .icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+/* ============================================
+   TOAST NOTIFICATION
+   ============================================ */
+
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text);
+    color: var(--white);
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s ease;
+    z-index: 2000;
+    max-width: 300px;
+    text-align: center;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================
+   MILESTONES
+   ============================================ */
+
+.milestones-grid {
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: calc(100vh - 120px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 15px;
+    padding: 10px;
+}
+
+.milestone-box {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 120px;
+}
+
+.milestone-box:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.milestone-box:active {
+    transform: scale(0.98);
+}
+
+.milestone-box .milestone-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.milestone-box .milestone-title {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.milestone-box .milestone-date {
+    color: var(--text-light);
+    font-size: 12px;
+}
+
+.milestone-box.empty {
+    border: 2px dashed #e2e8f0;
+    background: transparent;
+    color: var(--text-light);
+}
+
+.milestone-box.empty:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
