@@ -149,6 +149,7 @@
         .btn-sleep { background: linear-gradient(135deg, var(--sleep), #7c3aed); }
         .btn-diaper { background: linear-gradient(135deg, var(--diaper), #d97706); }
         .btn-milestone { background: linear-gradient(135deg, var(--milestone), #059669); }
+        .btn-owlet { background: linear-gradient(135deg, #ec4899, #e91e63); }
 
         /* Modal Styles */
         .modal {
@@ -1002,6 +1003,10 @@
             <span class="icon">😴</span>
             <span>Sleep End</span>
         </button>
+        <button class="grid-btn btn-owlet" onclick="openOwletView()">
+            <span class="icon">💓</span>
+            <span>Owlet Monitor</span>
+        </button>
     </div>
 
     <!-- Add Event Modal -->
@@ -1074,6 +1079,25 @@
                 <div class="icon">⭐</div>
                 <h3>No milestones yet</h3>
                 <p>Record your baby's special moments</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owlet Monitor View -->
+    <div class="events-view" id="owletView">
+        <div class="events-header">
+            <button class="back-btn" onclick="closeOwletView()">
+                <span>←</span>
+            </button>
+            <h2>Owlet Monitor</h2>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="owletStatus" style="margin-bottom: 20px;">
+                <div class="empty-state">
+                    <div class="icon">💓</div>
+                    <h3>Loading Owlet data...</h3>
+                    <p>Please wait while we fetch your baby's vitals</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1345,6 +1369,133 @@
         function closeMilestonesView() {
             document.getElementById('milestonesView').classList.remove('active');
             document.getElementById('gridContainer').classList.remove('hidden');
+        }
+
+        // Owlet Monitor
+        function openOwletView() {
+            document.getElementById('owletView').classList.add('active');
+            document.getElementById('gridContainer').classList.add('hidden');
+            loadOwletData();
+        }
+
+        function closeOwletView() {
+            document.getElementById('owletView').classList.remove('active');
+            document.getElementById('gridContainer').classList.remove('hidden');
+        }
+
+        async function loadOwletData() {
+            const statusDiv = document.getElementById('owletStatus');
+            try {
+                const response = await fetch('events.php?vitals=true');
+                if (!response.ok) throw new Error('Failed to fetch vitals');
+                
+                const data = await response.json();
+                const { latest_reading, vitals, last_update } = data;
+                
+                if (!latest_reading) {
+                    statusDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">💓</div>
+                            <h3>No Owlet Data Available</h3>
+                            <p>Make sure the Owlet sync service is running and configured</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const lastUpdateTime = new Date(last_update).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const getVitalStatus = (value, low, high, label) => {
+                    if (value === null || value === undefined) return 'gray';
+                    if (value < low || value > high) return 'red';
+                    return 'green';
+                };
+                
+                const hrStatus = getVitalStatus(latest_reading.heart_rate, 60, 160, 'HR');
+                const o2Status = getVitalStatus(latest_reading.oxygen_level, 95, 100, 'O2');
+                
+                statusDiv.innerHTML = `
+                    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
+                            <span style="font-size: 12px; color: #64748b;">Updated ${lastUpdateTime}</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#cbd5e1'};">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Heart Rate</div>
+                                <div style="font-size: 28px; font-weight: 600; color: ${hrStatus === 'green' ? '#10b981' : hrStatus === 'red' ? '#ef4444' : '#64748b'};">
+                                    ${latest_reading.heart_rate !== null ? latest_reading.heart_rate + ' bpm' : 'N/A'}
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#cbd5e1'};">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Oxygen Level</div>
+                                <div style="font-size: 28px; font-weight: 600; color: ${o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b'};">
+                                    ${latest_reading.oxygen_level !== null ? latest_reading.oxygen_level + '%' : 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    ${latest_reading.movement !== null ? latest_reading.movement : 'N/A'}
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Battery</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    ${latest_reading.battery !== null ? latest_reading.battery + '%' : 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                            <div style="font-size: 12px; color: #64748b;">
+                                Sock Connected: <strong style="color: ${latest_reading.sock_connected ? '#10b981' : '#ef4444'};">${latest_reading.sock_connected ? '✓ Yes' : '✗ No'}</strong>
+                            </div>
+                            ${latest_reading.low_oxygen ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>' : ''}
+                            ${latest_reading.high_heart_rate ? '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Recent Readings</h3>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${vitals.slice(0, 20).map((vital, index) => {
+                                const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                return `
+                                    <div style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; border-left: 3px solid #ec4899;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                            <strong>${time}</strong>
+                                            <span style="color: #64748b;">${vital.heart_rate} bpm • ${vital.oxygen_level}%</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading Owlet data:', error);
+                statusDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <h3>Error Loading Data</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
         }
 
         // Render events list

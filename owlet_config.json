@@ -1,0 +1,14 @@
+{
+  "email": "marinapaju92@gmail.com",
+  "password": "blasonsimlen!",
+  "region": "europe-west-1",
+  "sync_interval_minutes": 15,
+  "retention_hours": 48,
+  "auto_create_events": true,
+  "php_api_endpoint": "http://babymonitor.hardcoded.ee/events.php",
+  "sleep_detection_enabled": true,
+  "sleep_detection_threshold_hr_low": 60,
+  "sleep_detection_threshold_hr_high": 120,
+  "sleep_detection_movement_threshold": 10
+}
+

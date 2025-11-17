@@ -36,8 +36,40 @@ function saveEvents($file, $events) {
     return file_put_contents($file, $jsonData, LOCK_EX) !== false;
 }
 
-// Handle GET request - return all events
+// Handle GET request - return all events or vitals
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Check if requesting vitals data
+    if (isset($_GET['vitals']) && $_GET['vitals'] === 'true') {
+        // Return Owlet vitals data
+        $vitalsFile = 'owlet_vitals.json';
+        if (!file_exists($vitalsFile)) {
+            echo json_encode(['vitals' => [], 'last_update' => null]);
+            exit();
+        }
+        
+        try {
+            $vitalsData = file_get_contents($vitalsFile);
+            $vitals = json_decode($vitalsData, true);
+            
+            if ($vitals === null) {
+                $vitals = [];
+            }
+            
+            $response = [
+                'vitals' => array_slice($vitals, 0, 100), // Limit to last 100 readings
+                'last_update' => !empty($vitals) ? $vitals[0]['timestamp'] : null,
+                'latest_reading' => !empty($vitals) ? $vitals[0] : null
+            ];
+            
+            echo json_encode($response);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to read vitals file']);
+        }
+        exit();
+    }
+    
+    // Default: return all events
     $events = getEvents($eventsFile);
     echo json_encode($events);
     exit();
