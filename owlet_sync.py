@@ -33,11 +33,13 @@ class OwletSyncService:
         self.latest_file = 'owlet_latest.json'  # Real-time data (single entry)
         self.history_file = 'owlet_history.json'  # Historical data (minute-interval only)
         self.daily_summaries_dir = 'owlet_daily_summaries'  # Directory for daily summaries
+        self.todays_hourly_file = 'owlet_todays_hourly.json'  # Today's hourly data (accumulates throughout the day)
         self.api = None
         self.last_sleep_state = None
         self.session = None
         self.last_history_save_time = None  # Track last time we saved to history
         self.last_daily_cleanup_time = None  # Track last time we cleaned up old data
+        self.last_hourly_update_time = None  # Track last time we updated today's hourly data
         
         # Ensure daily summaries directory exists
         Path(self.daily_summaries_dir).mkdir(exist_ok=True)
@@ -270,6 +272,193 @@ class OwletSyncService:
         except Exception as e:
             logger.error(f"Failed to save daily summary: {e}")
             return False
+    
+    def load_todays_hourly(self):
+        """Load today's hourly data from file"""
+        if not os.path.exists(self.todays_hourly_file):
+            return {
+                'date': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'hourly': []
+            }
+        
+        try:
+            with open(self.todays_hourly_file, 'r') as f:
+                data = json.load(f)
+                # Verify it's today's data
+                today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+                if data.get('date') != today_str:
+                    # New day, reset
+                    return {
+                        'date': today_str,
+                        'hourly': []
+                    }
+                return data
+        except Exception as e:
+            logger.warning(f"Failed to load today's hourly data: {e}")
+            return {
+                'date': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'hourly': []
+            }
+    
+    def save_todays_hourly(self, data):
+        """Save today's hourly data to file"""
+        try:
+            with open(self.todays_hourly_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Saved today's hourly data: {len(data.get('hourly', []))} hours")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save today's hourly data: {e}")
+            return False
+    
+    def should_update_hourly(self):
+        """Check if we should update today's hourly data (every hour)"""
+        current_time = datetime.now(timezone.utc)
+        
+        if self.last_hourly_update_time is None:
+            # First time, always update
+            return True
+        
+        # Check if an hour has passed
+        time_since_last_update = (current_time - self.last_hourly_update_time).total_seconds()
+        # Update once per hour (3600 seconds)
+        return time_since_last_update >= 3600
+    
+    def update_todays_hourly(self):
+        """
+        Calculate and update today's hourly data.
+        Gets the past hour of minute-by-minute history data and creates an hourly average.
+        """
+        try:
+            current_time = datetime.now(timezone.utc)
+            current_hour = current_time.hour
+            
+            # Load history data
+            history = self.load_history()
+            if not history:
+                logger.debug("No historical data available for hourly update")
+                return
+            
+            # Calculate the time range for the past hour
+            # We want to include data from: (current_hour - 1) to current_hour
+            one_hour_ago = current_time - timedelta(hours=1)
+            
+            # Filter history for the past hour
+            past_hour_vitals = []
+            for vital in history:
+                try:
+                    vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
+                    if vital_time >= one_hour_ago and vital_time <= current_time:
+                        past_hour_vitals.append(vital)
+                except Exception as e:
+                    logger.warning(f"Could not parse vital timestamp for hourly update: {vital.get('timestamp')}, {e}")
+            
+            if not past_hour_vitals:
+                logger.debug(f"No data from past hour for hourly update")
+                return
+            
+            # Helper function to aggregate metrics (same as in daily summary)
+            def aggregate_metrics(vitals_list):
+                """Aggregate metrics from a list of vitals"""
+                if not vitals_list:
+                    return None
+                
+                heart_rates = [v.get('heart_rate') for v in vitals_list if v.get('heart_rate') is not None]
+                oxygen_sats = [v.get('oxygen_saturation') for v in vitals_list if v.get('oxygen_saturation') is not None]
+                oxygen_10_avs = [v.get('oxygen_10_av') for v in vitals_list if v.get('oxygen_10_av') is not None]
+                movements = [v.get('movement') for v in vitals_list if v.get('movement') is not None]
+                temperatures = [v.get('skin_temperature') for v in vitals_list if v.get('skin_temperature') is not None]
+                battery_percentages = [v.get('battery_percentage') for v in vitals_list if v.get('battery_percentage') is not None]
+                
+                low_battery_count = sum(1 for v in vitals_list if v.get('low_battery'))
+                high_hr_count = sum(1 for v in vitals_list if v.get('high_heart_rate'))
+                low_ox_count = sum(1 for v in vitals_list if v.get('low_oxygen'))
+                disconnect_count = sum(1 for v in vitals_list if not v.get('sock_connected', True))
+                
+                sleep_count = sum(1 for v in vitals_list if v.get('sleep_state') == 2)
+                awake_count = sum(1 for v in vitals_list if v.get('sleep_state') == 1)
+                
+                return {
+                    'data_points': len(vitals_list),
+                    'heart_rate': {
+                        'avg': round(sum(heart_rates) / len(heart_rates), 1) if heart_rates else None,
+                        'min': min(heart_rates) if heart_rates else None,
+                        'max': max(heart_rates) if heart_rates else None,
+                    },
+                    'oxygen_saturation': {
+                        'avg': round(sum(oxygen_sats) / len(oxygen_sats), 1) if oxygen_sats else None,
+                        'min': min(oxygen_sats) if oxygen_sats else None,
+                        'max': max(oxygen_sats) if oxygen_sats else None,
+                    },
+                    'oxygen_10_av': {
+                        'avg': round(sum(oxygen_10_avs) / len(oxygen_10_avs), 1) if oxygen_10_avs else None,
+                        'min': min(oxygen_10_avs) if oxygen_10_avs else None,
+                        'max': max(oxygen_10_avs) if oxygen_10_avs else None,
+                    },
+                    'movement': {
+                        'avg': round(sum(movements) / len(movements), 1) if movements else None,
+                        'min': min(movements) if movements else None,
+                        'max': max(movements) if movements else None,
+                    },
+                    'skin_temperature': {
+                        'avg': round(sum(temperatures) / len(temperatures), 2) if temperatures else None,
+                        'min': round(min(temperatures), 2) if temperatures else None,
+                        'max': round(max(temperatures), 2) if temperatures else None,
+                    },
+                    'battery_percentage': {
+                        'avg': round(sum(battery_percentages) / len(battery_percentages), 1) if battery_percentages else None,
+                        'min': min(battery_percentages) if battery_percentages else None,
+                        'max': max(battery_percentages) if battery_percentages else None,
+                    },
+                    'alerts': {
+                        'low_battery': low_battery_count,
+                        'high_heart_rate': high_hr_count,
+                        'low_oxygen': low_ox_count,
+                        'disconnections': disconnect_count
+                    },
+                    'sleep': {
+                        'asleep': sleep_count,
+                        'awake': awake_count,
+                    }
+                }
+            
+            # Create hourly entry for the past hour
+            hour_agg = aggregate_metrics(past_hour_vitals)
+            hour_agg['hour'] = current_hour - 1 if current_hour > 0 else 23  # The hour we just completed
+            hour_agg['timestamp_start'] = one_hour_ago.isoformat().replace('+00:00', 'Z')
+            hour_agg['timestamp_end'] = current_time.isoformat().replace('+00:00', 'Z')
+            
+            # Load today's hourly data
+            todays_hourly = self.load_todays_hourly()
+            
+            # Check if we already have data for this hour
+            hour_index = -1
+            for idx, entry in enumerate(todays_hourly.get('hourly', [])):
+                if entry.get('hour') == hour_agg['hour']:
+                    hour_index = idx
+                    break
+            
+            # Add or update the hourly entry
+            if hour_index >= 0:
+                todays_hourly['hourly'][hour_index] = hour_agg
+                logger.info(f"Updated hour {hour_agg['hour']} in today's hourly data ({len(past_hour_vitals)} data points)")
+            else:
+                todays_hourly['hourly'].append(hour_agg)
+                # Sort by hour to keep it organized
+                todays_hourly['hourly'].sort(key=lambda x: x.get('hour', 0))
+                logger.info(f"Added hour {hour_agg['hour']} to today's hourly data ({len(past_hour_vitals)} data points)")
+            
+            # Update metadata
+            todays_hourly['last_update'] = current_time.isoformat().replace('+00:00', 'Z')
+            todays_hourly['total_hours'] = len(todays_hourly.get('hourly', []))
+            
+            # Save the updated data
+            self.save_todays_hourly(todays_hourly)
+            
+        except Exception as e:
+            logger.error(f"Failed to update today's hourly data: {e}")
+            import traceback
+            logger.debug(f"Full traceback: {traceback.format_exc()}")
     
     def load_daily_summary(self, date=None):
         """Load a daily summary from file"""
@@ -567,6 +756,12 @@ class OwletSyncService:
             logger.info("Performing daily cleanup...")
             self.cleanup_yesterdays_data()
             self.last_daily_cleanup_time = datetime.now(timezone.utc)
+        
+        # Update today's hourly data if needed (every hour)
+        if self.should_update_hourly():
+            logger.info("Updating today's hourly data...")
+            self.update_todays_hourly()
+            self.last_hourly_update_time = datetime.now(timezone.utc)
         
         # Authenticate (only needed if not already authenticated)
         if not self.api:

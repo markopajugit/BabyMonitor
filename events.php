@@ -65,8 +65,47 @@ function getDailySummaries($summariesDir = 'owlet_daily_summaries', $limit = 30)
     return $summaries;
 }
 
+// Function to get today's hourly data
+function getTodaysHourly($filename = 'owlet_todays_hourly.json') {
+    if (!file_exists($filename)) {
+        return [
+            'date' => date('Y-m-d', time()),
+            'hourly' => [],
+            'total_hours' => 0,
+            'last_update' => null
+        ];
+    }
+    
+    try {
+        $data = json_decode(file_get_contents($filename), true);
+        if ($data === null) {
+            return [
+                'date' => date('Y-m-d', time()),
+                'hourly' => [],
+                'total_hours' => 0,
+                'last_update' => null
+            ];
+        }
+        return $data;
+    } catch (Exception $e) {
+        return [
+            'date' => date('Y-m-d', time()),
+            'hourly' => [],
+            'total_hours' => 0,
+            'last_update' => null
+        ];
+    }
+}
+
 // Handle GET request - return all events or vitals
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Check if requesting today's hourly data
+    if (isset($_GET['todays_hourly']) && $_GET['todays_hourly'] === 'true') {
+        $todaysHourly = getTodaysHourly('owlet_todays_hourly.json');
+        echo json_encode($todaysHourly);
+        exit();
+    }
+    
     // Check if requesting daily summaries
     if (isset($_GET['summaries']) && $_GET['summaries'] === 'true') {
         // Return daily summary data for fast historical loading
