@@ -1480,19 +1480,22 @@
             loadOwletData();
             setupOwletSwipeGesture();
             
-            // Auto-refresh vital data every 3 seconds while view is open
-            if (owletAutoRefreshInterval) clearInterval(owletAutoRefreshInterval);
-            owletAutoRefreshInterval = setInterval(() => {
+            // Auto-refresh vital data immediately after previous call completes
+            if (owletAutoRefreshInterval) clearTimeout(owletAutoRefreshInterval);
+            const scheduleOwletRefresh = () => {
                 if (document.getElementById('owletView').classList.contains('active')) {
-                    loadOwletData();
+                    loadOwletData().finally(() => {
+                        owletAutoRefreshInterval = setTimeout(scheduleOwletRefresh, 0);
+                    });
                 } else {
-                    // Stop interval if view is closed
+                    // Stop refresh if view is closed
                     if (owletAutoRefreshInterval) {
-                        clearInterval(owletAutoRefreshInterval);
+                        clearTimeout(owletAutoRefreshInterval);
                         owletAutoRefreshInterval = null;
                     }
                 }
-            }, 3000); // Refresh every 3 seconds
+            };
+            owletAutoRefreshInterval = setTimeout(scheduleOwletRefresh, 0);
         }
 
         function closeOwletView() {
@@ -1795,18 +1798,21 @@
             document.getElementById('owletView').classList.add('hidden');
             loadOwletHistory();
             setupHistorySwipeGesture();
-            // Auto-refresh history every 3 seconds
-            if (owletHistoryAutoRefreshInterval) clearInterval(owletHistoryAutoRefreshInterval);
-            owletHistoryAutoRefreshInterval = setInterval(() => {
+            // Auto-refresh history immediately after previous call completes
+            if (owletHistoryAutoRefreshInterval) clearTimeout(owletHistoryAutoRefreshInterval);
+            const scheduleHistoryRefresh = () => {
                 if (document.getElementById('owletHistoryView').classList.contains('active')) {
-                    loadOwletHistory();
+                    loadOwletHistory().finally(() => {
+                        owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 0);
+                    });
                 } else {
                     if (owletHistoryAutoRefreshInterval) {
-                        clearInterval(owletHistoryAutoRefreshInterval);
+                        clearTimeout(owletHistoryAutoRefreshInterval);
                         owletHistoryAutoRefreshInterval = null;
                     }
                 }
-            }, 3000);
+            };
+            owletHistoryAutoRefreshInterval = setTimeout(scheduleHistoryRefresh, 0);
         }
         
         function closeOwletHistoryView() {
