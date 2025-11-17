@@ -4,6 +4,11 @@ owlet_latest.json
 owlet_history.json
 owlet_vitals.json
 
+events.json
+
+start_owlet_service.bat
+start_owlet_service.sh
+
 # Daily summaries directory (large, shouldn't be committed)
 owlet_daily_summaries/
 
