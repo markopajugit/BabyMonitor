@@ -1,0 +1,39 @@
+# Local configuration and data
+owlet_config.json
+owlet_latest.json
+owlet_history.json
+owlet_vitals.json
+
+# Daily summaries directory (large, shouldn't be committed)
+owlet_daily_summaries/
+
+# Events database
+events.json
+
+# Logs
+*.log
+owlet_sync.log
+
+# Cursor IDE
+.cursor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+

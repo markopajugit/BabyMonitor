@@ -36,8 +36,50 @@ function saveEvents($file, $events) {
     return file_put_contents($file, $jsonData, LOCK_EX) !== false;
 }
 
+// Function to get available daily summaries
+function getDailySummaries($summariesDir = 'owlet_daily_summaries', $limit = 30) {
+    $summaries = [];
+    
+    if (!is_dir($summariesDir)) {
+        return $summaries;
+    }
+    
+    $files = array_diff(scandir($summariesDir, SCANDIR_SORT_DESCENDING), ['.', '..']);
+    $count = 0;
+    
+    foreach ($files as $file) {
+        if (substr($file, -5) === '.json' && $count < $limit) {
+            try {
+                $filepath = $summariesDir . '/' . $file;
+                $data = json_decode(file_get_contents($filepath), true);
+                if ($data && isset($data['date'])) {
+                    $summaries[] = $data;
+                    $count++;
+                }
+            } catch (Exception $e) {
+                // Skip invalid files
+            }
+        }
+    }
+    
+    return $summaries;
+}
+
 // Handle GET request - return all events or vitals
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Check if requesting daily summaries
+    if (isset($_GET['summaries']) && $_GET['summaries'] === 'true') {
+        // Return daily summary data for fast historical loading
+        $summaries = getDailySummaries('owlet_daily_summaries', 30); // Get last 30 days
+        $response = [
+            'summaries' => $summaries,
+            'total_days' => count($summaries),
+            'last_update' => !empty($summaries) ? $summaries[0]['last_timestamp'] : null
+        ];
+        echo json_encode($response);
+        exit();
+    }
+    
     // Check if requesting vitals data
     if (isset($_GET['vitals']) && $_GET['vitals'] === 'true') {
         // Return Owlet vitals data

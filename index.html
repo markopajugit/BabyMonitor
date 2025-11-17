@@ -1837,91 +1837,56 @@
         async function loadOwletHistory() {
             const contentDiv = document.getElementById('owletHistoryContent');
             try {
-                const response = await fetch('events.php?vitals=true');
-                if (!response.ok) throw new Error('Failed to fetch vitals');
+                // Fetch daily summaries (fast load, hour-by-hour data)
+                const response = await fetch('events.php?summaries=true');
+                if (!response.ok) throw new Error('Failed to fetch summaries');
                 
                 const data = await response.json();
-                const { vitals } = data;
+                const { summaries } = data;
                 
-                if (!vitals || vitals.length === 0) {
+                if (!summaries || summaries.length === 0) {
                     contentDiv.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📭</div>
                             <h3>No Historical Data</h3>
-                            <p>Data will appear here as it's collected</p>
+                            <p>Daily summaries will appear here as they're created</p>
                         </div>
                     `;
                     return;
                 }
                 
-                // Calculate statistics with proper null/undefined filtering
-                const hrs = vitals
-                    .map(v => v.heart_rate)
-                    .filter(v => v !== null && v !== undefined && !isNaN(v))
-                    .map(v => parseFloat(v));
-                    
-                const o2s = vitals
-                    .map(v => v.oxygen_saturation)
-                    .filter(v => v !== null && v !== undefined && !isNaN(v))
-                    .map(v => parseFloat(v));
-                    
-                const temps = vitals
-                    .map(v => v.skin_temperature)
-                    .filter(v => v !== null && v !== undefined && !isNaN(v))
-                    .map(v => parseFloat(v));
+                // Use the most recent day's data for statistics and hourly breakdown
+                const todaySummary = summaries[0];
+                const dailyStats = todaySummary.daily;
                 
-                const avgHR = hrs.length > 0 ? (hrs.reduce((a, b) => a + b, 0) / hrs.length).toFixed(0) : 'N/A';
-                const minHR = hrs.length > 0 ? Math.min(...hrs).toFixed(0) : 'N/A';
-                const maxHR = hrs.length > 0 ? Math.max(...hrs).toFixed(0) : 'N/A';
+                const avgHR = dailyStats.heart_rate?.avg !== null ? dailyStats.heart_rate?.avg.toFixed(0) : 'N/A';
+                const minHR = dailyStats.heart_rate?.min !== null ? dailyStats.heart_rate?.min.toFixed(0) : 'N/A';
+                const maxHR = dailyStats.heart_rate?.max !== null ? dailyStats.heart_rate?.max.toFixed(0) : 'N/A';
                 
-                const avgO2 = o2s.length > 0 ? (o2s.reduce((a, b) => a + b, 0) / o2s.length).toFixed(1) : 'N/A';
-                const minO2 = o2s.length > 0 ? Math.min(...o2s).toFixed(1) : 'N/A';
-                const maxO2 = o2s.length > 0 ? Math.max(...o2s).toFixed(1) : 'N/A';
+                const avgO2 = dailyStats.oxygen_saturation?.avg !== null ? dailyStats.oxygen_saturation?.avg.toFixed(1) : 'N/A';
+                const minO2 = dailyStats.oxygen_saturation?.min !== null ? dailyStats.oxygen_saturation?.min.toFixed(1) : 'N/A';
+                const maxO2 = dailyStats.oxygen_saturation?.max !== null ? dailyStats.oxygen_saturation?.max.toFixed(1) : 'N/A';
                 
-                const avgTemp = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1) : 'N/A';
+                const avgTemp = dailyStats.skin_temperature?.avg !== null ? dailyStats.skin_temperature?.avg.toFixed(1) : 'N/A';
                 
-                const timeSpan = vitals.length > 1 ? 
-                    Math.round((new Date(vitals[0].timestamp) - new Date(vitals[vitals.length - 1].timestamp)) / 60000) + ' min' 
-                    : 'N/A';
+                // Calculate time span
+                const firstTime = new Date(todaySummary.first_timestamp);
+                const lastTime = new Date(todaySummary.last_timestamp);
+                const timeSpan = (lastTime - firstTime) / 60000 + ' min';
                 
-                // Count sleep periods (only count if sleep_state is 1 or 2, not 0 which is unknown)
-                const asleepCount = vitals.filter(v => v.sleep_state === 2).length;
-                const awakeCount = vitals.filter(v => v.sleep_state === 1).length;
-                const knownStateCount = asleepCount + awakeCount;
-                const sleepPercentage = knownStateCount > 0 ? Math.round((asleepCount / knownStateCount) * 100) : 0;
+                // Calculate sleep percentage
+                const totalSleepReadings = dailyStats.sleep?.asleep + dailyStats.sleep?.awake;
+                const sleepPercentage = totalSleepReadings > 0 ? Math.round((dailyStats.sleep?.asleep / totalSleepReadings) * 100) : 0;
                 
-                // Calculate hourly averages for past 24 hours
-                const hourlyData = {};
-                const now = new Date();
-                
-                // Initialize 24 hours (one for each hour of the day)
-                for (let i = 0; i < 24; i++) {
-                    hourlyData[i] = { hrs: [], o2s: [] };
-                }
-                
-                // Group vitals by hour of the day
-                vitals.forEach(vital => {
-                    const date = new Date(vital.timestamp);
-                    const hour = date.getHours();
-                    
-                    if (vital.heart_rate !== null && vital.heart_rate !== undefined && !isNaN(vital.heart_rate)) {
-                        hourlyData[hour].hrs.push(parseFloat(vital.heart_rate));
-                    }
-                    if (vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined && !isNaN(vital.oxygen_saturation)) {
-                        hourlyData[hour].o2s.push(parseFloat(vital.oxygen_saturation));
-                    }
-                });
-                
-                // Create array of hourly averages with 24 entries
-                const hourlyAverages = Array.from({ length: 24 }, (_, i) => {
-                    const data = hourlyData[i];
-                    const nextHour = (i + 1) % 24;
-                    const timeRange = `${String(i).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`;
+                // Use hourly data from summary (already calculated server-side)
+                const hourlyAverages = todaySummary.hourly.map((hour, index) => {
+                    const nextHour = (index + 1) % 24;
+                    const timeRange = `${String(index).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`;
                     return {
                         time: timeRange,
-                        avgHR: data.hrs.length > 0 ? (data.hrs.reduce((a, b) => a + b, 0) / data.hrs.length).toFixed(0) : 'N/A',
-                        avgO2: data.o2s.length > 0 ? (data.o2s.reduce((a, b) => a + b, 0) / data.o2s.length).toFixed(1) : 'N/A',
-                        hasData: data.hrs.length > 0 || data.o2s.length > 0
+                        avgHR: hour.heart_rate?.avg !== null ? hour.heart_rate?.avg.toFixed(0) : 'N/A',
+                        avgO2: hour.oxygen_saturation?.avg !== null ? hour.oxygen_saturation?.avg.toFixed(1) : 'N/A',
+                        hasData: hour.data_points > 0
                     };
                 });
                 
@@ -2005,33 +1970,35 @@
                     `).join('');
                 }
                 
-                // Update timeline
+                // Update timeline with all available days
                 const timelineContainer = document.getElementById('historyTimelineContainer');
                 if (timelineContainer) {
-                    timelineContainer.innerHTML = vitals.map((vital, index) => {
-                        const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        const date = new Date(vital.timestamp).toLocaleDateString('en-US', {
+                    timelineContainer.innerHTML = summaries.map((summary, index) => {
+                        const date = new Date(summary.date);
+                        const dateStr = date.toLocaleDateString('en-US', {
                             month: 'short',
-                            day: 'numeric'
+                            day: 'numeric',
+                            year: 'numeric'
                         });
-                        let sleepEmoji = '❓';
-                        if (vital.sleep_state === 2) sleepEmoji = '😴';
-                        else if (vital.sleep_state === 8) sleepEmoji = '💤';
-                        else if (vital.sleep_state === 1) sleepEmoji = '👀';
-                        else if (vital.sleep_state === 0) sleepEmoji = '◌';
+                        const dailyData = summary.daily;
+                        const alerts = dailyData.alerts;
+                        const hasAlerts = alerts.low_battery || alerts.high_heart_rate || alerts.low_oxygen || alerts.disconnections;
+                        const alertsText = [
+                            alerts.low_battery ? `🔋 LowBat(${alerts.low_battery})` : '',
+                            alerts.high_heart_rate ? `❤️ HighHR(${alerts.high_heart_rate})` : '',
+                            alerts.low_oxygen ? `O2 Low(${alerts.low_oxygen})` : '',
+                            alerts.disconnections ? `📡 Disconn(${alerts.disconnections})` : ''
+                        ].filter(a => a).join(' | ') || 'No alerts';
+                        
                         return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
-                                <div>
-                                    <strong>${time}</strong>
-                                    <div style="color: #94a3b8; font-size: 11px;">${date}</div>
+                            <div style="display: flex; flex-direction: column; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; background: ${hasAlerts ? '#fef3c7' : '#f8fafc'};">
+                                <div style="font-weight: 600; margin-bottom: 6px; color: #1e293b;">${dateStr}</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; color: #64748b; margin-bottom: 6px;">
+                                    <div><strong>HR:</strong> ${dailyData.heart_rate?.avg || 'N/A'} (${dailyData.heart_rate?.min || '?'}-${dailyData.heart_rate?.max || '?'})</div>
+                                    <div><strong>O2:</strong> ${dailyData.oxygen_saturation?.avg || 'N/A'}% (${dailyData.oxygen_saturation?.min || '?'}-${dailyData.oxygen_saturation?.max || '?'}%)</div>
                                 </div>
-                                <div style="display: flex; gap: 12px; color: #64748b; font-size: 11px;">
-                                    <span>HR: ${vital.heart_rate || 'N/A'}</span>
-                                    <span>O2: ${vital.oxygen_saturation || 'N/A'}%</span>
-                                    <span>${sleepEmoji}</span>
+                                <div style="font-size: 10px; color: ${hasAlerts ? '#dc2626' : '#64748b'}; background: ${hasAlerts ? '#fecaca' : '#e2e8f0'}; padding: 4px 8px; border-radius: 4px;">
+                                    ${alertsText}
                                 </div>
                             </div>
                         `;
