@@ -41,7 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // Check if requesting vitals data
     if (isset($_GET['vitals']) && $_GET['vitals'] === 'true') {
         // Return Owlet vitals data
-        $vitalsFile = 'owlet_vitals.json';
+        // Use historical data for analysis (minute-interval data only)
+        $historyFile = 'owlet_history.json';
+        // Fall back to main vitals file if history doesn't exist yet
+        $vitalsFile = file_exists($historyFile) ? $historyFile : 'owlet_vitals.json';
+        
         if (!file_exists($vitalsFile)) {
             echo json_encode(['vitals' => [], 'last_update' => null]);
             exit();
@@ -55,16 +59,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 $vitals = [];
             }
             
+            // Load latest real-time data separately
+            $latestReading = null;
+            $latestFile = 'owlet_latest.json';
+            if (file_exists($latestFile)) {
+                try {
+                    $latestData = file_get_contents($latestFile);
+                    $latestReading = json_decode($latestData, true);
+                } catch (Exception $e) {
+                    // Latest file might not exist yet
+                }
+            }
+            
             $response = [
                 'vitals' => array_slice($vitals, 0, 100), // Limit to last 100 readings
                 'last_update' => !empty($vitals) ? $vitals[0]['timestamp'] : null,
-                'latest_reading' => !empty($vitals) ? $vitals[0] : null
+                'latest_reading' => $latestReading !== null ? $latestReading : (!empty($vitals) ? $vitals[0] : null)
             ];
             
             echo json_encode($response);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to read vitals file']);
+        }
+        exit();
+    }
+    
+    // Handle request for latest real-time data
+    if (isset($_GET['latest']) && $_GET['latest'] === 'true') {
+        $latestFile = 'owlet_latest.json';
+        if (!file_exists($latestFile)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'No real-time data available']);
+            exit();
+        }
+        
+        try {
+            $latestData = file_get_contents($latestFile);
+            $reading = json_decode($latestData, true);
+            
+            if ($reading === null) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Invalid real-time data']);
+            } else {
+                echo json_encode(['reading' => $reading]);
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to read latest data']);
         }
         exit();
     }

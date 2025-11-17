@@ -29,10 +29,13 @@ class OwletSyncService:
     def __init__(self, config_file='owlet_config.json'):
         self.config_file = config_file
         self.config = self.load_config()
-        self.vitals_file = 'owlet_vitals.json'
+        self.vitals_file = 'owlet_vitals.json'  # Deprecated, kept for compatibility
+        self.latest_file = 'owlet_latest.json'  # Real-time data (single entry)
+        self.history_file = 'owlet_history.json'  # Historical data (minute-interval only)
         self.api = None
         self.last_sleep_state = None
         self.session = None
+        self.last_history_save_time = None  # Track last time we saved to history
         
     def load_config(self):
         """Load configuration from JSON file"""
@@ -60,13 +63,43 @@ class OwletSyncService:
             return []
     
     def save_vitals(self, vitals):
-        """Save vital signs to file"""
+        """Save vital signs to file (deprecated, kept for compatibility)"""
         try:
             with open(self.vitals_file, 'w') as f:
                 json.dump(vitals, f, indent=2)
             logger.info(f"Saved {len(vitals)} vital readings")
         except Exception as e:
             logger.error(f"Failed to save vitals: {e}")
+    
+    def save_latest(self, vital):
+        """Save only the latest vital reading (real-time data)"""
+        try:
+            with open(self.latest_file, 'w') as f:
+                json.dump(vital, f, indent=2)
+            logger.info(f"Saved latest vital reading: HR={vital.get('heart_rate')}, O2={vital.get('oxygen_saturation')}%")
+        except Exception as e:
+            logger.error(f"Failed to save latest vital: {e}")
+    
+    def load_history(self):
+        """Load existing historical vital signs"""
+        if not os.path.exists(self.history_file):
+            return []
+        
+        try:
+            with open(self.history_file, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load history: {e}")
+            return []
+    
+    def save_history(self, history):
+        """Save historical vital readings to file"""
+        try:
+            with open(self.history_file, 'w') as f:
+                json.dump(history, f, indent=2)
+            logger.info(f"Saved {len(history)} historical vital readings")
+        except Exception as e:
+            logger.error(f"Failed to save history: {e}")
     
     def cleanup_old_vitals(self, vitals):
         """Remove vital signs older than retention period"""
@@ -316,15 +349,43 @@ class OwletSyncService:
             logger.warning("Failed to fetch device data - will retry next sync")
             return False
         
-        # Extract and save vital data
+        # Extract vital data
         vital = self.extract_vital_data(sock)
         if vital:
+            # Save real-time data (latest only)
+            self.save_latest(vital)
+            
+            # Save to legacy vitals file for backward compatibility
             vitals = self.load_vitals()
-            vitals.insert(0, vital)  # Add to front (most recent first)
-            # Only cleanup old vitals if retention is enabled
+            vitals.insert(0, vital)
             if self.config.get('retention_enabled', True):
                 vitals = self.cleanup_old_vitals(vitals)
             self.save_vitals(vitals)
+            
+            # Save to historical data if minute interval has passed
+            history_interval_seconds = self.config.get('history_interval_seconds', 60)
+            current_time = datetime.now(timezone.utc)
+            
+            # Check if we should save to history (once per minute by default)
+            should_save_history = False
+            if self.last_history_save_time is None:
+                # First time, always save
+                should_save_history = True
+            else:
+                time_since_last_save = (current_time - self.last_history_save_time).total_seconds()
+                if time_since_last_save >= history_interval_seconds:
+                    should_save_history = True
+            
+            if should_save_history:
+                history = self.load_history()
+                history.insert(0, vital)
+                # Cleanup old history entries
+                retention_hours = self.config.get('retention_hours', 48)
+                cutoff_time = current_time - timedelta(hours=retention_hours)
+                history = [h for h in history if datetime.fromisoformat(h['timestamp'].replace('Z', '+00:00')) > cutoff_time]
+                self.save_history(history)
+                self.last_history_save_time = current_time
+                logger.info(f"Saved to historical data. Total history entries: {len(history)}")
         
         # Detect sleep state and create events if needed
         if self.config.get('auto_create_events', True):
