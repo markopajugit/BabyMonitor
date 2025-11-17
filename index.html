@@ -1900,7 +1900,10 @@
                 const selectedDateStr = currentHistoryDate.toISOString().split('T')[0]; // YYYY-MM-DD format
                 let selectedSummary = summaries.find(s => s.date === selectedDateStr);
                 
-                // If not found, try to find the closest available date
+                // Check if we have a summary for the exact selected date
+                const hasSummaryForDate = selectedSummary !== undefined;
+                
+                // If not found, try to find the closest available date (for fallback display)
                 if (!selectedSummary) {
                     // Try to find today's data (might be in-progress)
                     const todayStr = new Date().toISOString().split('T')[0];
@@ -1912,12 +1915,30 @@
                     }
                 }
                 
+                // If no summary exists at all, show empty state
                 if (!selectedSummary) {
                     contentDiv.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📭</div>
                             <h3>No Data for Selected Date</h3>
                             <p>No historical data available for this date</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // If we don't have a summary for the selected date, show message
+                if (!hasSummaryForDate) {
+                    const formattedDate = currentHistoryDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    contentDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📅</div>
+                            <h3>No Summary Available</h3>
+                            <p>No summary data available for ${formattedDate}</p>
                         </div>
                     `;
                     return;
@@ -2050,14 +2071,6 @@
                 
                 // Always render the full content
                 contentDiv.innerHTML = `
-                    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Daily Averages</h3>
-                            <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
-                                <strong>Data span:</strong> <span id="historyTimeSpan">${timeSpan}</span><br>
-                                <strong>Total readings:</strong> <span id="historyTotalReadings">${dailyStats?.data_points || 0}</span>
-                            </div>
-                        </div>
-                        
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                             <div style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
                                 <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Heart Rate</div>
@@ -2104,8 +2117,6 @@
                     if (elem) elem.textContent = value;
                 };
                 
-                updateElement('historyTimeSpan', timeSpan);
-                updateElement('historyTotalReadings', dailyStats?.data_points || 0);
                 updateElement('historyAvgHR', avgHR);
                 updateElement('historyMinHR', minHR);
                 updateElement('historyMaxHR', maxHR);
