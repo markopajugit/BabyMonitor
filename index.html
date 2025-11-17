@@ -1630,7 +1630,18 @@
                 const tempDisplay = latest_reading.skin_temperature !== null && latest_reading.skin_temperature !== undefined 
                     ? latest_reading.skin_temperature + '°C'
                     : 'N/A';
-                const sleepStateDisplay = latest_reading.sleep_state === 2 ? 'Asleep 😴' : latest_reading.sleep_state === 1 ? 'Awake 👀' : 'Unknown';
+                // Sleep state: 0=unknown, 1=awake, 2=asleep
+                let sleepStateDisplay = 'Unknown';
+                if (latest_reading.sleep_state === 2) {
+                    sleepStateDisplay = 'Asleep 😴';
+                } else if (latest_reading.sleep_state === 1) {
+                    sleepStateDisplay = 'Awake 👀';
+                } else if (latest_reading.sleep_state === 0) {
+                    sleepStateDisplay = 'Detecting...';
+                } else {
+                    logger.warn('Unknown sleep state:', latest_reading.sleep_state);
+                    sleepStateDisplay = 'Error (' + latest_reading.sleep_state + ')';
+                }
                 const o2AverageDisplay = latest_reading.oxygen_10_av !== null && latest_reading.oxygen_10_av !== undefined 
                     ? latest_reading.oxygen_10_av + '%'
                     : 'N/A';
@@ -1770,15 +1781,42 @@
         }
 
         // Owlet History View
+        let historyTouchStartX = 0;
+        let historyTouchStartY = 0;
+        
         function openOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.add('active');
             document.getElementById('owletView').classList.add('hidden');
             loadOwletHistory();
+            setupHistorySwipeGesture();
         }
         
         function closeOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.remove('active');
             document.getElementById('owletView').classList.remove('hidden');
+        }
+        
+        function setupHistorySwipeGesture() {
+            const container = document.getElementById('owletHistoryContent');
+            if (!container) return;
+            
+            container.addEventListener('touchstart', (e) => {
+                historyTouchStartX = e.touches[0].clientX;
+                historyTouchStartY = e.touches[0].clientY;
+            }, false);
+            
+            container.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const diffX = touchEndX - historyTouchStartX;
+                const diffY = touchEndY - historyTouchStartY;
+                
+                // Swipe right with minimal vertical movement
+                if (diffX > 100 && Math.abs(diffY) < 50) {
+                    closeOwletHistoryView();
+                }
+            }, false);
         }
         
         async function loadOwletHistory() {
@@ -1801,10 +1839,21 @@
                     return;
                 }
                 
-                // Calculate statistics
-                const hrs = vitals.map(v => v.heart_rate).filter(v => v !== null);
-                const o2s = vitals.map(v => v.oxygen_saturation).filter(v => v !== null);
-                const temps = vitals.map(v => v.skin_temperature).filter(v => v !== null);
+                // Calculate statistics with proper null/undefined filtering
+                const hrs = vitals
+                    .map(v => v.heart_rate)
+                    .filter(v => v !== null && v !== undefined && !isNaN(v))
+                    .map(v => parseFloat(v));
+                    
+                const o2s = vitals
+                    .map(v => v.oxygen_saturation)
+                    .filter(v => v !== null && v !== undefined && !isNaN(v))
+                    .map(v => parseFloat(v));
+                    
+                const temps = vitals
+                    .map(v => v.skin_temperature)
+                    .filter(v => v !== null && v !== undefined && !isNaN(v))
+                    .map(v => parseFloat(v));
                 
                 const avgHR = hrs.length > 0 ? (hrs.reduce((a, b) => a + b, 0) / hrs.length).toFixed(0) : 'N/A';
                 const minHR = hrs.length > 0 ? Math.min(...hrs).toFixed(0) : 'N/A';
@@ -1820,9 +1869,11 @@
                     Math.round((new Date(vitals[0].timestamp) - new Date(vitals[vitals.length - 1].timestamp)) / 60000) + ' min' 
                     : 'N/A';
                 
-                // Count sleep periods
+                // Count sleep periods (only count if sleep_state is 1 or 2, not 0 which is unknown)
                 const asleepCount = vitals.filter(v => v.sleep_state === 2).length;
-                const sleepPercentage = vitals.length > 0 ? Math.round((asleepCount / vitals.length) * 100) : 0;
+                const awakeCount = vitals.filter(v => v.sleep_state === 1).length;
+                const knownStateCount = asleepCount + awakeCount;
+                const sleepPercentage = knownStateCount > 0 ? Math.round((asleepCount / knownStateCount) * 100) : 0;
                 
                 contentDiv.innerHTML = `
                     <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
@@ -1871,7 +1922,10 @@
                                     month: 'short',
                                     day: 'numeric'
                                 });
-                                const sleepEmoji = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 1 ? '👀' : '❓';
+                                let sleepEmoji = '❓';
+                                if (vital.sleep_state === 2) sleepEmoji = '😴';
+                                else if (vital.sleep_state === 1) sleepEmoji = '👀';
+                                else if (vital.sleep_state === 0) sleepEmoji = '◌';
                                 return `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
                                         <div>

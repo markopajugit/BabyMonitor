@@ -205,7 +205,8 @@ class OwletSyncService:
                 'skin_temp': props.get('skin_temperature'),
             }
             
-            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_saturation']}%, Battery={vital['battery_percentage']}% ({vital['battery_minutes']} min), Connected={vital['sock_connected']}, Temp={vital['skin_temperature']}C")
+            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_saturation']}%, Battery={vital['battery_percentage']}% ({vital['battery_minutes']} min), Connected={vital['sock_connected']}, Temp={vital['skin_temperature']}C, Sleep={vital['sleep_state']}")
+            logger.debug(f"Sleep state value: {vital['sleep_state']} (type: {type(vital['sleep_state'])})")
             return vital
         except Exception as e:
             logger.error(f"Failed to extract vital data: {e}")
