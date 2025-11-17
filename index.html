@@ -467,6 +467,28 @@
                 transform: translateY(0);
             }
         }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
 
         .event-item {
             animation: slideInUp 0.3s ease;
@@ -1090,6 +1112,9 @@
                 <span>←</span>
             </button>
             <h2>Owlet Monitor</h2>
+            <button class="back-btn" style="margin-left: auto;" onclick="openOwletHistoryView()" title="View historical data">
+                <span style="font-size: 20px;">📊</span>
+            </button>
         </div>
         <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;" id="owletContainer">
             <div id="owletStatus" style="margin-bottom: 20px;">
@@ -1097,6 +1122,25 @@
                     <div class="icon">💓</div>
                     <h3>Loading Owlet data...</h3>
                     <p>Please wait while we fetch your baby's vitals</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owlet History View -->
+    <div class="events-view" id="owletHistoryView">
+        <div class="events-header">
+            <button class="back-btn" onclick="closeOwletHistoryView()">
+                <span>←</span>
+            </button>
+            <h2>Owlet History</h2>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box;">
+            <div id="owletHistoryContent">
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h3>Loading history...</h3>
+                    <p>Please wait while we process your data</p>
                 </div>
             </div>
         </div>
@@ -1375,6 +1419,56 @@
         let owletTouchStartX = 0;
         let owletTouchStartY = 0;
         let owletAutoRefreshInterval = null;
+        let lastAlertTime = {};
+        
+        function playAlertSound() {
+            // Simple beep alert using Web Audio API
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio alert not available');
+            }
+        }
+        
+        function showAlertToast(message, type = 'warning') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'danger' ? '#ef4444' : '#f59e0b'};
+                color: white;
+                padding: 16px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 600;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
         
         function openOwletView() {
             document.getElementById('owletView').classList.add('active');
@@ -1382,7 +1476,7 @@
             loadOwletData();
             setupOwletSwipeGesture();
             
-            // Auto-refresh vital data every 30 seconds while view is open
+            // Auto-refresh vital data every 10 seconds while view is open
             if (owletAutoRefreshInterval) clearInterval(owletAutoRefreshInterval);
             owletAutoRefreshInterval = setInterval(() => {
                 if (document.getElementById('owletView').classList.contains('active')) {
@@ -1394,7 +1488,7 @@
                         owletAutoRefreshInterval = null;
                     }
                 }
-            }, 10000); // Refresh every 30 seconds
+            }, 10000); // Refresh every 10 seconds
         }
 
         function closeOwletView() {
@@ -1447,6 +1541,44 @@
                 
                 // Restore visibility
                 statusDiv.style.opacity = '1';
+                
+                // Check for alerts and play sound/show toast
+                if (latest_reading) {
+                    if (latest_reading.low_oxygen === true) {
+                        const alertKey = 'low_oxygen';
+                        const now = Date.now();
+                        if (!lastAlertTime[alertKey] || now - lastAlertTime[alertKey] > 30000) {
+                            playAlertSound();
+                            showAlertToast('⚠️ Low Oxygen Alert!', 'danger');
+                            lastAlertTime[alertKey] = now;
+                        }
+                    }
+                    if (latest_reading.high_heart_rate === true) {
+                        const alertKey = 'high_hr';
+                        const now = Date.now();
+                        if (!lastAlertTime[alertKey] || now - lastAlertTime[alertKey] > 30000) {
+                            playAlertSound();
+                            showAlertToast('⚠️ High Heart Rate Alert!', 'danger');
+                            lastAlertTime[alertKey] = now;
+                        }
+                    }
+                    if (latest_reading.low_battery === true) {
+                        const alertKey = 'low_battery';
+                        const now = Date.now();
+                        if (!lastAlertTime[alertKey] || now - lastAlertTime[alertKey] > 60000) {
+                            showAlertToast('🔋 Low Battery on Sock', 'warning');
+                            lastAlertTime[alertKey] = now;
+                        }
+                    }
+                    if (latest_reading.sock_connected === false) {
+                        const alertKey = 'sock_disconnected';
+                        const now = Date.now();
+                        if (!lastAlertTime[alertKey] || now - lastAlertTime[alertKey] > 60000) {
+                            showAlertToast('❌ Sock Disconnected!', 'danger');
+                            lastAlertTime[alertKey] = now;
+                        }
+                    }
+                }
                 
                 if (!latest_reading) {
                     statusDiv.innerHTML = `
@@ -1508,7 +1640,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <div>
                                 <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
-                                <div style="font-size: 11px; color: #10b981; margin-top: 2px;">🔄 Auto-updating every 30s</div>
+                                <div style="font-size: 11px; color: #10b981; margin-top: 2px;">🔄 Auto-updating every 10s</div>
                             </div>
                             <span style="font-size: 12px; color: #64748b; text-align: right;">Updated<br>${lastUpdateTime}</span>
                         </div>
@@ -1637,6 +1769,138 @@
             }
         }
 
+        // Owlet History View
+        function openOwletHistoryView() {
+            document.getElementById('owletHistoryView').classList.add('active');
+            document.getElementById('owletView').classList.add('hidden');
+            loadOwletHistory();
+        }
+        
+        function closeOwletHistoryView() {
+            document.getElementById('owletHistoryView').classList.remove('active');
+            document.getElementById('owletView').classList.remove('hidden');
+        }
+        
+        async function loadOwletHistory() {
+            const contentDiv = document.getElementById('owletHistoryContent');
+            try {
+                const response = await fetch('events.php?vitals=true');
+                if (!response.ok) throw new Error('Failed to fetch vitals');
+                
+                const data = await response.json();
+                const { vitals } = data;
+                
+                if (!vitals || vitals.length === 0) {
+                    contentDiv.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <h3>No Historical Data</h3>
+                            <p>Data will appear here as it's collected</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Calculate statistics
+                const hrs = vitals.map(v => v.heart_rate).filter(v => v !== null);
+                const o2s = vitals.map(v => v.oxygen_saturation).filter(v => v !== null);
+                const temps = vitals.map(v => v.skin_temperature).filter(v => v !== null);
+                
+                const avgHR = hrs.length > 0 ? (hrs.reduce((a, b) => a + b, 0) / hrs.length).toFixed(0) : 'N/A';
+                const minHR = hrs.length > 0 ? Math.min(...hrs).toFixed(0) : 'N/A';
+                const maxHR = hrs.length > 0 ? Math.max(...hrs).toFixed(0) : 'N/A';
+                
+                const avgO2 = o2s.length > 0 ? (o2s.reduce((a, b) => a + b, 0) / o2s.length).toFixed(1) : 'N/A';
+                const minO2 = o2s.length > 0 ? Math.min(...o2s).toFixed(1) : 'N/A';
+                const maxO2 = o2s.length > 0 ? Math.max(...o2s).toFixed(1) : 'N/A';
+                
+                const avgTemp = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1) : 'N/A';
+                
+                const timeSpan = vitals.length > 1 ? 
+                    Math.round((new Date(vitals[0].timestamp) - new Date(vitals[vitals.length - 1].timestamp)) / 60000) + ' min' 
+                    : 'N/A';
+                
+                // Count sleep periods
+                const asleepCount = vitals.filter(v => v.sleep_state === 2).length;
+                const sleepPercentage = vitals.length > 0 ? Math.round((asleepCount / vitals.length) * 100) : 0;
+                
+                contentDiv.innerHTML = `
+                    <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Statistics</h3>
+                        <div style="font-size: 12px; color: #64748b; line-height: 1.8;">
+                            <strong>Data span:</strong> ${timeSpan}<br>
+                            <strong>Total readings:</strong> ${vitals.length}
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
+                            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Heart Rate</div>
+                            <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
+                            <div style="font-size: 11px; opacity: 0.8;">Min: ${minHR} | Max: ${maxHR}</div>
+                        </div>
+                        
+                        <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
+                            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Oxygen Level</div>
+                            <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
+                            <div style="font-size: 11px; opacity: 0.8;">Min: ${minO2}% | Max: ${maxO2}%</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                        <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0f9ff;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Avg Temperature</div>
+                            <div style="font-size: 24px; font-weight: 600; color: #1e293b;">${avgTemp}°C</div>
+                        </div>
+                        
+                        <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0fdf4;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Sleep Time</div>
+                            <div style="font-size: 24px; font-weight: 600; color: #1e293b;">${sleepPercentage}%</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Timeline</h3>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${vitals.slice(0, 50).reverse().map((vital, index) => {
+                                const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                const date = new Date(vital.timestamp).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
+                                const sleepEmoji = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 1 ? '👀' : '❓';
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+                                        <div>
+                                            <strong>${time}</strong>
+                                            <div style="color: #94a3b8; font-size: 11px;">${date}</div>
+                                        </div>
+                                        <div style="display: flex; gap: 12px; color: #64748b; font-size: 11px;">
+                                            <span>HR: ${vital.heart_rate || 'N/A'}</span>
+                                            <span>O2: ${vital.oxygen_saturation || 'N/A'}%</span>
+                                            <span>${sleepEmoji}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading history:', error);
+                contentDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <h3>Error Loading History</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
         // Render events list
         function renderEvents() {
             const eventList = document.getElementById('eventList');
