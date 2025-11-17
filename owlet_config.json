@@ -9,8 +9,8 @@
   "auto_create_events": true,
   "php_api_endpoint": "http://babymonitor.hardcoded.ee/events.php",
   "sleep_detection_enabled": true,
-  "sleep_detection_threshold_hr_low": 60,
-  "sleep_detection_threshold_hr_high": 120,
+  "sleep_detection_threshold_hr_low": 90,
+  "sleep_detection_threshold_hr_high": 160,
   "sleep_detection_movement_threshold": 10,
   "history_interval_seconds": 60
 }
