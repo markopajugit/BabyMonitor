@@ -1740,12 +1740,6 @@
                                 <div id="owletAlerts"></div>
                             </div>
                         </div>
-                        
-                        <div style="margin-top: 20px;">
-                            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Recent Readings</h3>
-                            <div id="owletRecentReadings">
-                            </div>
-                        </div>
                     `;
                 }
                 
@@ -1788,67 +1782,6 @@
                     if (latest_reading.high_heart_rate === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>';
                     if (latest_reading.low_battery === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>';
                     alertsDiv.innerHTML = alertsHTML;
-                }
-                
-                // Update recent readings - only add new ones instead of regenerating all
-                const recentReadingsDiv = document.getElementById('owletRecentReadings');
-                if (recentReadingsDiv) {
-                    // Check if we need to add new readings at the top
-                    const existingReadings = recentReadingsDiv.querySelectorAll('[data-vital-timestamp]');
-                    const lastExistingTimestamp = existingReadings.length > 0 ? existingReadings[0].getAttribute('data-vital-timestamp') : null;
-                    
-                    // Only update if we have new readings
-                    if (lastExistingTimestamp !== vitals[0]?.timestamp) {
-                        // Generate HTML for new readings that don't exist yet
-                        let newReadingsHTML = '';
-                        for (let i = 0; i < Math.min(20, vitals.length); i++) {
-                            const vital = vitals[i];
-                            const existingReading = recentReadingsDiv.querySelector(`[data-vital-timestamp="${vital.timestamp}"]`);
-                            
-                            if (!existingReading) {
-                                const time = new Date(vital.timestamp).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
-                                const hrDisplay = vital.heart_rate !== null && vital.heart_rate !== undefined ? vital.heart_rate : 'N/A';
-                                const o2Display = vital.oxygen_saturation !== null && vital.oxygen_saturation !== undefined ? vital.oxygen_saturation : 'N/A';
-                                const tempDisplay = vital.skin_temperature !== null && vital.skin_temperature !== undefined ? vital.skin_temperature : 'N/A';
-                                const movementDisplay = vital.movement !== null && vital.movement !== undefined ? vital.movement : 'N/A';
-                                const batteryDisplay = vital.battery_percentage !== null && vital.battery_percentage !== undefined ? vital.battery_percentage : 'N/A';
-                                const sleepState = vital.sleep_state === 2 ? '😴' : vital.sleep_state === 8 ? '💤' : vital.sleep_state === 1 ? '👀' : '?';
-                                newReadingsHTML += `
-                                    <div data-vital-timestamp="${vital.timestamp}" style="background: white; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 12px; border-left: 3px solid #ec4899; animation: slideIn 0.3s ease;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                            <strong>${time}</strong>
-                                            <span style="background: #f0f9ff; padding: 2px 6px; border-radius: 4px; color: #0369a1;">${sleepState}</span>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
-                                            <span>HR: ${hrDisplay}${hrDisplay !== 'N/A' ? ' bpm' : ''}</span>
-                                            <span>O2: ${o2Display}${o2Display !== 'N/A' ? '%' : ''}</span>
-                                            <span>Temp: ${tempDisplay}${tempDisplay !== 'N/A' ? '°C' : ''}</span>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                            <span>Move: ${movementDisplay}</span>
-                                            <span>Batt: ${batteryDisplay}${batteryDisplay !== 'N/A' ? '%' : ''}</span>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                        }
-                        
-                        // Add new readings to the top
-                        if (newReadingsHTML) {
-                            recentReadingsDiv.insertAdjacentHTML('afterbegin', newReadingsHTML);
-                        }
-                        
-                        // Remove old readings beyond the 20 most recent
-                        const allReadings = recentReadingsDiv.querySelectorAll('[data-vital-timestamp]');
-                        if (allReadings.length > 20) {
-                            for (let i = 20; i < allReadings.length; i++) {
-                                allReadings[i].remove();
-                            }
-                        }
-                    }
                 }
             } catch (error) {
                 console.error('Error loading Owlet data:', error);
