@@ -24,8 +24,13 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json?v=1.3">
     
+    <!-- Cache Control - Prevent aggressive caching on iOS -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>Baby Monitor</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=1.3">
 </head>
 <body>
     <!-- Main Grid -->
@@ -268,7 +273,7 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=1.3"></script>
 </body>
 </html>
 
