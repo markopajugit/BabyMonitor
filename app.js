@@ -1,20 +1,20 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.1';
+        const APP_VERSION = '1.7.2';
 
         const ICONS = {
-            'Feed': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/></svg>',
-            'Feed Start': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/><line x1="12" y1="11" x2="12" y2="16"/></svg>',
-            'Feed End': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/><path d="m16 16-4-4-4 4"/></svg>',
-            'Sleep': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
-            'Sleep Start': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
-            'Sleep End': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-            'Diaper': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M4.5 12v6a3.5 3.5 0 0 0 7 0"/><path d="M12.5 18a3.5 3.5 0 0 0 7 0v-6"/></svg>',
-            'Medicine': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8h8"/><path d="M12 4v16"/><rect width="16" height="16" x="4" y="4" rx="2"/></svg>',
-            'Bath': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12A5 5 0 1 1 19 12"/><path d="M3 16v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2"/><path d="M4 16h16"/><path d="M4 16v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
-            'Doctor': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
-            'Milestone': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-            'Other': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-            'default': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>'
+            'Feed': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed Start': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed End': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep Start': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep End': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Diaper': '<img src="134996.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Medicine': '<img src="134996.png" alt="Medicine Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Bath': '<img src="134996.png" alt="Bath Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Doctor': '<img src="134996.png" alt="Doctor Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Milestone': '<img src="263806.png" alt="Milestone Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Other': '<img src="134996.png" alt="Other Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'default': '<img src="134996.png" alt="Event Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">'
         };
         
         // Image icons for timeline view (inverted to white)
@@ -160,8 +160,6 @@
                     if (document.getElementById('dayTimelineView').classList.contains('active')) {
                         renderTimeline();
                     }
-                    // Check feed status when events are loaded
-                    checkActiveFeed();
                 })
                 .catch(error => {
                     console.error('Error loading events:', error);
@@ -3134,197 +3132,6 @@
             calendarDayEl.textContent = todayNumber;
         }
         
-        // ========== FEED MONITORING AND NOTIFICATIONS ==========
-        let feedMonitoringInterval = null;
-        let notificationSentForFeedId = {};
-
-        // Request notification permission (only called from user interactions)
-        function requestNotificationPermission() {
-            if (!('Notification' in window)) {
-                console.log('This browser does not support notifications');
-                return;
-            }
-
-            if (Notification.permission === 'granted') {
-                console.log('Notification permission already granted');
-                startFeedMonitoring();
-            } else if (Notification.permission !== 'denied') {
-                // Ask for permission only if not denied before
-                // Use setTimeout to defer permission request so it doesn't block updates
-                setTimeout(() => {
-                    Notification.requestPermission().then((permission) => {
-                        if (permission === 'granted') {
-                            console.log('Notification permission granted');
-                            startFeedMonitoring();
-                        } else {
-                            console.log('Notification permission denied');
-                        }
-                    }).catch((err) => {
-                        console.log('Error requesting notification permission:', err);
-                    });
-                }, 100); // Small delay to prevent blocking
-            } else {
-                // Permission was previously denied, still start monitoring but without notifications
-                startFeedMonitoring();
-            }
-        }
-
-        // Register service worker for PWA notifications
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('service-worker.js?v=' + APP_VERSION)
-                    .then((reg) => {
-                        console.log('Service Worker registered:', reg);
-                    })
-                    .catch((err) => {
-                        console.log('Service Worker registration failed:', err);
-                    });
-            }
-        }
-
-        // Check if a feed is still active (started but not ended)
-        function checkActiveFeed() {
-            try {
-                const now = new Date().getTime();
-                const ONE_HOUR = 60 * 60 * 1000;
-
-                // Get all feed events
-                if (!events || !Array.isArray(events)) {
-                    console.log('Events not loaded yet');
-                    return;
-                }
-
-                const feedEvents = events.filter(e => e.type === 'Feed Start' || e.type === 'Feed End');
-                
-                // Sort by time descending
-                const sorted = [...feedEvents].sort((a, b) => new Date(b.time) - new Date(a.time));
-
-                // Check for incomplete feeds (Feed Start without corresponding Feed End)
-                for (let i = 0; i < sorted.length; i++) {
-                    const event = sorted[i];
-                    
-                    if (event.type === 'Feed Start') {
-                        // Check if there's a corresponding Feed End after this Feed Start
-                        const feedStartTime = new Date(event.time).getTime();
-                        const hasCorrespondingEnd = sorted.slice(0, i).some(e => 
-                            e.type === 'Feed End' && new Date(e.time).getTime() > feedStartTime
-                        );
-
-                        if (!hasCorrespondingEnd) {
-                            // This feed hasn't ended
-                            const feedDuration = now - feedStartTime;
-
-                            if (feedDuration > ONE_HOUR) {
-                                // Feed has lasted more than 1 hour
-                                const durationHours = Math.floor(feedDuration / (60 * 60 * 1000));
-                                const durationMinutes = Math.floor((feedDuration % (60 * 60 * 1000)) / (60 * 1000));
-                                
-                                // Send notification only once per feed
-                                if (!notificationSentForFeedId[event.id]) {
-                                    sendLongFeedNotification(durationHours, durationMinutes, event);
-                                    notificationSentForFeedId[event.id] = true;
-                                }
-                            }
-                        } else {
-                            // Feed has ended, clear the flag for this feed
-                            delete notificationSentForFeedId[event.id];
-                        }
-                        
-                        // Only check the most recent incomplete feed
-                        break;
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking active feed:', error);
-                // Continue monitoring despite errors
-            }
-        }
-
-        // Send notification for long feed
-        function sendLongFeedNotification(hours, minutes, feedEvent) {
-            const feedStartTime = new Date(feedEvent.time);
-            const timeStr = feedStartTime.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-
-            const notificationTitle = '🍼 Long Feeding Session';
-            const notificationOptions = {
-                body: `Your baby has been feeding for ${hours}h ${minutes}m (started at ${timeStr}). Consider ending this feed session if it's complete.`,
-                icon: 'icon-512.png',
-                badge: 'icon-192.png',
-                tag: 'long-feed-' + feedEvent.id,
-                requireInteraction: true,
-                actions: [
-                    {
-                        action: 'end-feed',
-                        title: 'End Feed'
-                    },
-                    {
-                        action: 'dismiss',
-                        title: 'Dismiss'
-                    }
-                ]
-            };
-
-            // Try to send via service worker notification API (preferred)
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'SEND_NOTIFICATION',
-                    title: notificationTitle,
-                    options: notificationOptions
-                });
-            }
-
-            // Fallback: Use Notification API directly
-            if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification(notificationTitle, notificationOptions);
-                
-                notification.onclick = () => {
-                    window.focus();
-                    openDayTimelineView();
-                    notification.close();
-                };
-            }
-
-            console.log('Long feed notification sent for feed started at', feedEvent.time);
-        }
-
-        // Start monitoring feeds for long duration
-        function startFeedMonitoring() {
-            // Check immediately
-            checkActiveFeed();
-
-            // Then check every 5 minutes
-            if (feedMonitoringInterval) {
-                clearInterval(feedMonitoringInterval);
-            }
-            feedMonitoringInterval = setInterval(() => {
-                checkActiveFeed();
-            }, 5 * 60 * 1000); // 5 minutes
-
-            console.log('Feed monitoring started');
-        }
-
-        // Stop monitoring (if needed)
-        function stopFeedMonitoring() {
-            if (feedMonitoringInterval) {
-                clearInterval(feedMonitoringInterval);
-                feedMonitoringInterval = null;
-            }
-            console.log('Feed monitoring stopped');
-        }
-
         // Initialize
         setDefaultTime();
         loadEvents();
-        registerServiceWorker();
-        
-        // Request notification permission on first user interaction
-        document.addEventListener('click', function requestPermissionOnce() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                requestNotificationPermission();
-            }
-            document.removeEventListener('click', requestPermissionOnce);
-        }, { once: false, capture: true });

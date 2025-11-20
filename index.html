@@ -6,54 +6,17 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <!-- iOS PWA Support -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Baby Monitor">
-
     <!-- App Icons -->
     <link rel="icon" href="favicon.ico" sizes="any">
-
-    <!-- iOS Home Screen Icons -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120x120.png">
-
-    <!-- PWA Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json?v=1.6.5">
 
     <!-- Feather Icons CDN -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.2/dist/feather.min.js"
         integrity="sha256-6kZaxraaA33En9pqscWF+VclCR7/RRXfYduR2dPF5U4=" crossorigin="anonymous"></script>
 
-    <!-- Cache Control - Prevent aggressive caching on iOS -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-
     <title>Baby Monitor</title>
     <link rel="stylesheet" href="styles.css?v=1.6.5">
-
-    <!-- Register Service Worker for PWA Notifications -->
-    <script>
-        // Register service worker on page load
-        window.addEventListener('load', () => {
-            if ('serviceWorker' in navigator) {
-                const appVersion = '1.6.5';
-                navigator.serviceWorker.register('service-worker.js?v=' + appVersion)
-                    .then((registration) => {
-                        console.log('Service Worker registered successfully:', registration);
-                    })
-                    .catch((error) => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            }
-        });
-    </script>
 </head>
 
 <body>
