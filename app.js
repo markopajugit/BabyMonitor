@@ -2041,6 +2041,11 @@
                     </div>
                 `;
             }).join('');
+            
+            // Re-initialize Feather Icons if they're used in dynamically added content
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
         }
 
         // Render milestones grid with 6 boxes
@@ -2087,6 +2092,11 @@
                 `;
             } else {
                 milestonesGrid.innerHTML = boxes.join('');
+            }
+            
+            // Re-initialize Feather Icons if they're used in dynamically added content
+            if (typeof feather !== 'undefined') {
+                feather.replace();
             }
         }
 
@@ -3069,6 +3079,19 @@
             }
         });
 
+        // Initialize Feather Icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        // Set today's date in calendar icon
+        const today = new Date();
+        const todayNumber = today.getDate();
+        const calendarDayEl = document.getElementById('todayNumber');
+        if (calendarDayEl) {
+            calendarDayEl.textContent = todayNumber;
+        }
+        
         // Initialize
         setDefaultTime();
         loadEvents();
