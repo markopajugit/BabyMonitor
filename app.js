@@ -3086,7 +3086,13 @@
                 body: JSON.stringify({ id: eventId })
             })
             .then(response => {
-                if (!response.ok) throw new Error('Failed to delete');
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || `HTTP ${response.status}: Failed to delete`);
+                    }).catch(() => {
+                        throw new Error(`HTTP ${response.status}: Failed to delete`);
+                    });
+                }
                 return response.json();
             })
             .then(data => {
@@ -3098,8 +3104,8 @@
                 }
             })
             .catch(err => {
-                console.error(err);
-                showToast('Failed to delete event');
+                console.error('Delete error:', err);
+                showToast('Failed to delete event: ' + err.message);
             });
         }
 
