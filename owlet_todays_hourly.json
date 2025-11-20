@@ -1,0 +1,23 @@
+{
+  "date": "2025-11-20",
+  "hourly": [
+    {
+      "data_points": 836,
+      "heart_rate": {
+        "avg": 151.3,
+        "min": 123.0,
+        "max": 182.0
+      },
+      "oxygen_saturation": {
+        "avg": 95.8,
+        "min": 87.1,
+        "max": 100.0
+      },
+      "hour": 12,
+      "timestamp_start": "2025-11-20T12:17:33.522860+02:00",
+      "timestamp_end": "2025-11-20T13:17:33.522860+02:00"
+    }
+  ],
+  "last_update": "2025-11-20T13:17:33.522860+02:00",
+  "total_hours": 1
+}

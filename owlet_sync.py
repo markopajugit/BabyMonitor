@@ -22,7 +22,7 @@ except ImportError:
 
 # Setup logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Changed to DEBUG for detailed troubleshooting
+    level=logging.INFO,  # INFO level - only show important messages
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('owlet_sync.log'),
@@ -35,20 +35,22 @@ class OwletSyncService:
     def __init__(self, config_file='owlet_config.json'):
         self.config_file = config_file
         self.config = self.load_config()
-        self.vitals_file = 'owlet_vitals.json'  # Deprecated, kept for compatibility
         self.latest_file = 'owlet_latest.json'  # Real-time data (single entry)
-        self.history_file = 'owlet_history.json'  # Historical data (minute-interval only)
+        self.minutes_dir = 'owlet_minutes'  # Directory for daily minute data
         self.daily_summaries_dir = 'owlet_daily_summaries'  # Directory for daily summaries
         self.todays_hourly_file = 'owlet_todays_hourly.json'  # Today's hourly data (accumulates throughout the day)
         self.api = None
         self.last_sleep_state = None
         self.session = None
-        self.last_history_save_time = None  # Track last time we saved to history
         self.last_daily_cleanup_time = None  # Track last time we cleaned up old data
         self.last_hourly_update_time = None  # Track last time we updated today's hourly data
-        self.trigger_file = 'owlet_sync_trigger.txt'  # File that indicates Owlet view is open
         
-        # Ensure daily summaries directory exists
+        # Minute buffer system - accumulates readings during each minute
+        self.minute_buffer = {}  # Format: {"YYYY-MM-DD HH:MM": [readings]}
+        self.current_minute_key = None  # Track which minute we're currently buffering
+        
+        # Ensure required directories exist
+        Path(self.minutes_dir).mkdir(exist_ok=True)
         Path(self.daily_summaries_dir).mkdir(exist_ok=True)
         
         # Initialize timezone (default to UTC, can be overridden by config)
@@ -69,6 +71,127 @@ class OwletSyncService:
     def get_local_time(self):
         """Get current time in the configured timezone"""
         return datetime.now(timezone.utc).astimezone(self.timezone)
+    
+    def get_minute_file_path(self, date=None):
+        """Get the file path for minute data for a given date (in configured timezone)"""
+        if date is None:
+            date = self.get_local_time().date()
+        elif isinstance(date, datetime):
+            date = date.date()
+        
+        return os.path.join(self.minutes_dir, f"owlet_minutes_{date.isoformat()}.json")
+    
+    def load_daily_minutes(self, date=None):
+        """Load minute data for a specific day"""
+        filepath = self.get_minute_file_path(date)
+        if not os.path.exists(filepath):
+            return []
+        
+        try:
+            with open(filepath, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load daily minutes from {filepath}: {e}")
+            return []
+    
+    def save_daily_minutes(self, minutes_data, date=None):
+        """Save minute data for a specific day"""
+        filepath = self.get_minute_file_path(date)
+        try:
+            with open(filepath, 'w') as f:
+                json.dump(minutes_data, f, indent=2)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save daily minutes to {filepath}: {e}")
+            return False
+    
+    def calculate_minute_average(self, readings):
+        """Calculate HR and O2 averages from a list of readings for a minute"""
+        if not readings:
+            return None
+        
+        # Filter out None values
+        heart_rates = [r.get('heart_rate') for r in readings if r.get('heart_rate') is not None]
+        oxygen_sats = [r.get('oxygen_saturation') for r in readings if r.get('oxygen_saturation') is not None]
+        
+        # Calculate averages
+        avg_result = {
+            'data_points': len(readings)
+        }
+        
+        if heart_rates:
+            avg_result['heart_rate_avg'] = round(sum(heart_rates) / len(heart_rates), 1)
+        else:
+            avg_result['heart_rate_avg'] = None
+        
+        if oxygen_sats:
+            avg_result['oxygen_saturation_avg'] = round(sum(oxygen_sats) / len(oxygen_sats), 1)
+        else:
+            avg_result['oxygen_saturation_avg'] = None
+        
+        return avg_result
+    
+    def process_minute_buffer(self, vital):
+        """
+        Process readings in the minute buffer. When a new minute is detected,
+        save the previous minute's average and clear the buffer.
+        Returns True if a new minute's data was saved, False otherwise.
+        """
+        if not vital or 'timestamp' not in vital:
+            return False
+        
+        # Get current time in local timezone
+        vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
+        vital_time_local = vital_time.astimezone(self.timezone)
+        
+        # Create minute key (YYYY-MM-DD HH:MM)
+        minute_key = vital_time_local.strftime('%Y-%m-%d %H:%M')
+        
+        # Check if we've moved to a new minute
+        if self.current_minute_key is not None and minute_key != self.current_minute_key:
+            # New minute detected - process and save previous minute
+            try:
+                if self.current_minute_key in self.minute_buffer:
+                    readings = self.minute_buffer[self.current_minute_key]
+                    avg_data = self.calculate_minute_average(readings)
+                    
+                    if avg_data:
+                        # Parse the minute key to get timestamp
+                        minute_datetime = datetime.strptime(self.current_minute_key, '%Y-%m-%d %H:%M')
+                        # Convert back to UTC for storage
+                        minute_datetime_tz = self.timezone.localize(minute_datetime)
+                        minute_datetime_utc = minute_datetime_tz.astimezone(timezone.utc)
+                        
+                        # Create minute entry
+                        minute_entry = {
+                            'timestamp': minute_datetime_utc.isoformat().replace('+00:00', 'Z'),
+                            'heart_rate_avg': avg_data.get('heart_rate_avg'),
+                            'oxygen_saturation_avg': avg_data.get('oxygen_saturation_avg'),
+                            'data_points': avg_data.get('data_points')
+                        }
+                        
+                        # Load today's minute data and append
+                        minute_date = datetime.fromisoformat(self.current_minute_key.split(' ')[0]).date()
+                        daily_minutes = self.load_daily_minutes(minute_date)
+                        daily_minutes.append(minute_entry)
+                        self.save_daily_minutes(daily_minutes, minute_date)
+                        
+                        # Clear the previous minute from buffer
+                        del self.minute_buffer[self.current_minute_key]
+                        return True
+            except Exception as e:
+                logger.error(f"Error processing minute buffer: {e}")
+                import traceback
+                logger.error(f"Full traceback: {traceback.format_exc()}")
+        
+        # Add current vital to buffer
+        if minute_key not in self.minute_buffer:
+            self.minute_buffer[minute_key] = []
+        
+        self.minute_buffer[minute_key].append(vital)
+        self.current_minute_key = minute_key
+        
+        return False
         
     def load_config(self):
         """Load configuration from JSON file"""
@@ -83,79 +206,13 @@ class OwletSyncService:
             logger.error(f"Failed to load config: {e}")
             return None
     
-    def load_vitals(self):
-        """Load existing vital signs"""
-        if not os.path.exists(self.vitals_file):
-            return []
-        
-        try:
-            with open(self.vitals_file, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load vitals: {e}")
-            return []
-    
-    def save_vitals(self, vitals):
-        """Save vital signs to file (deprecated, kept for compatibility)"""
-        try:
-            with open(self.vitals_file, 'w') as f:
-                json.dump(vitals, f, indent=2)
-            logger.info(f"Saved {len(vitals)} vital readings")
-        except Exception as e:
-            logger.error(f"Failed to save vitals: {e}")
-    
     def save_latest(self, vital):
         """Save only the latest vital reading (real-time data)"""
         try:
             with open(self.latest_file, 'w') as f:
                 json.dump(vital, f, indent=2)
-            logger.info(f"Saved latest vital reading: HR={vital.get('heart_rate')}, O2={vital.get('oxygen_saturation')}%")
         except Exception as e:
             logger.error(f"Failed to save latest vital: {e}")
-    
-    def load_history(self):
-        """Load existing historical vital signs"""
-        if not os.path.exists(self.history_file):
-            return []
-        
-        try:
-            with open(self.history_file, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load history: {e}")
-            return []
-    
-    def save_history(self, history):
-        """Save historical vital readings to file"""
-        try:
-            with open(self.history_file, 'w') as f:
-                json.dump(history, f, indent=2)
-            logger.info(f"Saved {len(history)} historical vital readings")
-        except Exception as e:
-            logger.error(f"Failed to save history: {e}")
-    
-    def cleanup_old_vitals(self, vitals):
-        """Remove vital signs older than retention period"""
-        retention_hours = self.config.get('retention_hours', 48)
-        # Use timezone-aware UTC time for comparison
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=retention_hours)
-        
-        filtered = []
-        for vital in vitals:
-            try:
-                # Parse timestamp and ensure it's timezone-aware
-                vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-                if vital_time > cutoff_time:
-                    filtered.append(vital)
-            except Exception as e:
-                logger.warning(f"Could not parse vital timestamp: {vital.get('timestamp')}, {e}")
-                # Keep vital if we can't parse timestamp
-                filtered.append(vital)
-        
-        if len(filtered) < len(vitals):
-            logger.info(f"Cleaned up {len(vitals) - len(filtered)} old vital readings")
-        
-        return filtered
     
     def get_daily_summary_filename(self, date=None):
         """Get the filename for a daily summary based on date (in the configured timezone)"""
@@ -166,48 +223,43 @@ class OwletSyncService:
         
         return os.path.join(self.daily_summaries_dir, f"owlet_summary_{date.isoformat()}.json")
     
-    def aggregate_vitals_to_summary(self, vitals):
+    def aggregate_vitals_to_summary(self, date=None):
         """Aggregate minute-by-minute vital readings into a daily summary with hourly statistics"""
-        if not vitals:
+        if date is None:
+            date = self.get_local_time().date()
+        elif isinstance(date, datetime):
+            date = date.date()
+        
+        # Load minute data for the day
+        minutes = self.load_daily_minutes(date)
+        
+        if not minutes:
             return None
         
         try:
-            # First, organize vitals by hour (0-23)
-            hourly_vitals = {hour: [] for hour in range(24)}
+            # Organize minutes by hour (0-23)
+            hourly_data_by_hour = {hour: [] for hour in range(24)}
             
-            for vital in vitals:
+            for minute in minutes:
                 try:
-                    vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-                    # Convert UTC time to local timezone for hour calculation
-                    vital_time_local = vital_time.astimezone(self.timezone)
-                    hour = vital_time_local.hour
-                    hourly_vitals[hour].append(vital)
+                    minute_time = datetime.fromisoformat(minute['timestamp'].replace('Z', '+00:00'))
+                    minute_time_local = minute_time.astimezone(self.timezone)
+                    hour = minute_time_local.hour
+                    hourly_data_by_hour[hour].append(minute)
                 except Exception as e:
-                    logger.warning(f"Could not parse vital timestamp for hourly aggregation: {vital.get('timestamp')}, {e}")
+                    logger.warning(f"Could not parse minute timestamp: {minute.get('timestamp')}, {e}")
             
-            # Helper function to aggregate metrics for a list of vitals
-            def aggregate_metrics(vitals_list):
-                """Aggregate metrics from a list of vitals"""
-                if not vitals_list:
+            # Helper function to aggregate minute data for a list of hours
+            def aggregate_hour_data(minutes_list):
+                """Aggregate minute data from a list of minute entries"""
+                if not minutes_list:
                     return None
                 
-                heart_rates = [v.get('heart_rate') for v in vitals_list if v.get('heart_rate') is not None]
-                oxygen_sats = [v.get('oxygen_saturation') for v in vitals_list if v.get('oxygen_saturation') is not None]
-                oxygen_10_avs = [v.get('oxygen_10_av') for v in vitals_list if v.get('oxygen_10_av') is not None]
-                movements = [v.get('movement') for v in vitals_list if v.get('movement') is not None]
-                temperatures = [v.get('skin_temperature') for v in vitals_list if v.get('skin_temperature') is not None]
-                battery_percentages = [v.get('battery_percentage') for v in vitals_list if v.get('battery_percentage') is not None]
-                
-                low_battery_count = sum(1 for v in vitals_list if v.get('low_battery'))
-                high_hr_count = sum(1 for v in vitals_list if v.get('high_heart_rate'))
-                low_ox_count = sum(1 for v in vitals_list if v.get('low_oxygen'))
-                disconnect_count = sum(1 for v in vitals_list if not v.get('sock_connected', True))
-                
-                sleep_count = sum(1 for v in vitals_list if v.get('sleep_state') == 2)
-                awake_count = sum(1 for v in vitals_list if v.get('sleep_state') == 1)
+                heart_rates = [m.get('heart_rate_avg') for m in minutes_list if m.get('heart_rate_avg') is not None]
+                oxygen_sats = [m.get('oxygen_saturation_avg') for m in minutes_list if m.get('oxygen_saturation_avg') is not None]
                 
                 return {
-                    'data_points': len(vitals_list),
+                    'data_points': sum(m.get('data_points', 0) for m in minutes_list),
                     'heart_rate': {
                         'avg': round(sum(heart_rates) / len(heart_rates), 1) if heart_rates else None,
                         'min': min(heart_rates) if heart_rates else None,
@@ -217,85 +269,43 @@ class OwletSyncService:
                         'avg': round(sum(oxygen_sats) / len(oxygen_sats), 1) if oxygen_sats else None,
                         'min': min(oxygen_sats) if oxygen_sats else None,
                         'max': max(oxygen_sats) if oxygen_sats else None,
-                    },
-                    'oxygen_10_av': {
-                        'avg': round(sum(oxygen_10_avs) / len(oxygen_10_avs), 1) if oxygen_10_avs else None,
-                        'min': min(oxygen_10_avs) if oxygen_10_avs else None,
-                        'max': max(oxygen_10_avs) if oxygen_10_avs else None,
-                    },
-                    'movement': {
-                        'avg': round(sum(movements) / len(movements), 1) if movements else None,
-                        'min': min(movements) if movements else None,
-                        'max': max(movements) if movements else None,
-                    },
-                    'skin_temperature': {
-                        'avg': round(sum(temperatures) / len(temperatures), 2) if temperatures else None,
-                        'min': round(min(temperatures), 2) if temperatures else None,
-                        'max': round(max(temperatures), 2) if temperatures else None,
-                    },
-                    'battery_percentage': {
-                        'avg': round(sum(battery_percentages) / len(battery_percentages), 1) if battery_percentages else None,
-                        'min': min(battery_percentages) if battery_percentages else None,
-                        'max': max(battery_percentages) if battery_percentages else None,
-                    },
-                    'alerts': {
-                        'low_battery': low_battery_count,
-                        'high_heart_rate': high_hr_count,
-                        'low_oxygen': low_ox_count,
-                        'disconnections': disconnect_count
-                    },
-                    'sleep': {
-                        'asleep': sleep_count,
-                        'awake': awake_count,
                     }
                 }
             
             # Build hourly data array
             hourly_data = []
             for hour in range(24):
-                if hourly_vitals[hour]:
-                    hour_agg = aggregate_metrics(hourly_vitals[hour])
+                if hourly_data_by_hour[hour]:
+                    hour_agg = aggregate_hour_data(hourly_data_by_hour[hour])
                     hour_agg['hour'] = hour
                     hourly_data.append(hour_agg)
                 else:
-                    # Include empty hour for completeness
                     hourly_data.append({
                         'hour': hour,
                         'data_points': 0
                     })
             
             # Get daily aggregates for quick reference
-            daily_agg = aggregate_metrics(vitals)
+            daily_agg = aggregate_hour_data(minutes)
             
-            # Extract numeric values for daily averages
-            heart_rates = [v.get('heart_rate') for v in vitals if v.get('heart_rate') is not None]
-            oxygen_sats = [v.get('oxygen_saturation') for v in vitals if v.get('oxygen_saturation') is not None]
-            temperatures = [v.get('skin_temperature') for v in vitals if v.get('skin_temperature') is not None]
-            
-            # Build final summary
-            # Determine date from the first (most recent) vital in local timezone
-            try:
-                first_vital_time = datetime.fromisoformat(vitals[0]['timestamp'].replace('Z', '+00:00'))
-                first_vital_local = first_vital_time.astimezone(self.timezone)
-                summary_date = first_vital_local.strftime('%Y-%m-%d')
-            except Exception as e:
-                logger.warning(f"Could not determine summary date, using UTC: {e}")
-                summary_date = vitals[0]['timestamp'][:10]
+            # Determine first and last timestamps
+            first_timestamp = minutes[-1]['timestamp'] if minutes else None
+            last_timestamp = minutes[0]['timestamp'] if minutes else None
             
             summary = {
-                'date': summary_date,  # YYYY-MM-DD in local timezone
-                'total_data_points': len(vitals),
-                'first_timestamp': vitals[-1]['timestamp'],  # Last one is oldest
-                'last_timestamp': vitals[0]['timestamp'],   # First one is newest
-                'daily': daily_agg,  # Daily aggregates
-                'hourly': hourly_data  # Hourly breakdown (24 entries, one per hour)
+                'date': date.isoformat(),  # YYYY-MM-DD in local timezone
+                'total_data_points': sum(m.get('data_points', 0) for m in minutes),
+                'first_timestamp': first_timestamp,
+                'last_timestamp': last_timestamp,
+                'daily': daily_agg,
+                'hourly': hourly_data
             }
             
             return summary
         except Exception as e:
             logger.error(f"Failed to aggregate vitals to summary: {e}")
             import traceback
-            logger.debug(f"Full traceback: {traceback.format_exc()}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             return None
     
     def save_daily_summary(self, summary, date=None):
@@ -304,7 +314,6 @@ class OwletSyncService:
             filename = self.get_daily_summary_filename(date)
             with open(filename, 'w') as f:
                 json.dump(summary, f, indent=2)
-            logger.info(f"Saved daily summary: {filename} ({summary['data_points']} data points)")
             return True
         except Exception as e:
             logger.error(f"Failed to save daily summary: {e}")
@@ -342,7 +351,6 @@ class OwletSyncService:
         try:
             with open(self.todays_hourly_file, 'w') as f:
                 json.dump(data, f, indent=2)
-            logger.info(f"Saved today's hourly data: {len(data.get('hourly', []))} hours")
             return True
         except Exception as e:
             logger.error(f"Failed to save today's hourly data: {e}")
@@ -364,60 +372,45 @@ class OwletSyncService:
     def update_todays_hourly(self):
         """
         Calculate and update today's hourly data.
-        Gets the past hour of minute-by-minute history data and creates an hourly average.
+        Gets the past hour of minute-by-minute data and creates an hourly average.
         Uses the configured timezone for hour calculations.
         """
         try:
             current_time = self.get_local_time()
             current_hour = current_time.hour
             
-            # Load history data
-            history = self.load_history()
-            if not history:
-                logger.debug("No historical data available for hourly update")
+            # Load today's minute data
+            today_minutes = self.load_daily_minutes(current_time.date())
+            if not today_minutes:
                 return
             
             # Calculate the time range for the past hour
-            # We want to include data from: (current_hour - 1) to current_hour
             one_hour_ago = current_time - timedelta(hours=1)
             
-            # Filter history for the past hour
-            past_hour_vitals = []
-            for vital in history:
+            # Filter minute data for the past hour
+            past_hour_minutes = []
+            for minute in today_minutes:
                 try:
-                    vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-                    if vital_time >= one_hour_ago and vital_time <= current_time:
-                        past_hour_vitals.append(vital)
+                    minute_time = datetime.fromisoformat(minute['timestamp'].replace('Z', '+00:00'))
+                    if minute_time >= one_hour_ago and minute_time <= current_time:
+                        past_hour_minutes.append(minute)
                 except Exception as e:
-                    logger.warning(f"Could not parse vital timestamp for hourly update: {vital.get('timestamp')}, {e}")
+                    logger.warning(f"Could not parse minute timestamp for hourly update: {minute.get('timestamp')}, {e}")
             
-            if not past_hour_vitals:
-                logger.debug(f"No data from past hour for hourly update")
+            if not past_hour_minutes:
                 return
             
-            # Helper function to aggregate metrics (same as in daily summary)
-            def aggregate_metrics(vitals_list):
-                """Aggregate metrics from a list of vitals"""
-                if not vitals_list:
+            # Helper function to aggregate minute data for an hour
+            def aggregate_hour_minutes(minutes_list):
+                """Aggregate minute data from a list of minute entries"""
+                if not minutes_list:
                     return None
                 
-                heart_rates = [v.get('heart_rate') for v in vitals_list if v.get('heart_rate') is not None]
-                oxygen_sats = [v.get('oxygen_saturation') for v in vitals_list if v.get('oxygen_saturation') is not None]
-                oxygen_10_avs = [v.get('oxygen_10_av') for v in vitals_list if v.get('oxygen_10_av') is not None]
-                movements = [v.get('movement') for v in vitals_list if v.get('movement') is not None]
-                temperatures = [v.get('skin_temperature') for v in vitals_list if v.get('skin_temperature') is not None]
-                battery_percentages = [v.get('battery_percentage') for v in vitals_list if v.get('battery_percentage') is not None]
-                
-                low_battery_count = sum(1 for v in vitals_list if v.get('low_battery'))
-                high_hr_count = sum(1 for v in vitals_list if v.get('high_heart_rate'))
-                low_ox_count = sum(1 for v in vitals_list if v.get('low_oxygen'))
-                disconnect_count = sum(1 for v in vitals_list if not v.get('sock_connected', True))
-                
-                sleep_count = sum(1 for v in vitals_list if v.get('sleep_state') == 2)
-                awake_count = sum(1 for v in vitals_list if v.get('sleep_state') == 1)
+                heart_rates = [m.get('heart_rate_avg') for m in minutes_list if m.get('heart_rate_avg') is not None]
+                oxygen_sats = [m.get('oxygen_saturation_avg') for m in minutes_list if m.get('oxygen_saturation_avg') is not None]
                 
                 return {
-                    'data_points': len(vitals_list),
+                    'data_points': sum(m.get('data_points', 0) for m in minutes_list),
                     'heart_rate': {
                         'avg': round(sum(heart_rates) / len(heart_rates), 1) if heart_rates else None,
                         'min': min(heart_rates) if heart_rates else None,
@@ -427,41 +420,11 @@ class OwletSyncService:
                         'avg': round(sum(oxygen_sats) / len(oxygen_sats), 1) if oxygen_sats else None,
                         'min': min(oxygen_sats) if oxygen_sats else None,
                         'max': max(oxygen_sats) if oxygen_sats else None,
-                    },
-                    'oxygen_10_av': {
-                        'avg': round(sum(oxygen_10_avs) / len(oxygen_10_avs), 1) if oxygen_10_avs else None,
-                        'min': min(oxygen_10_avs) if oxygen_10_avs else None,
-                        'max': max(oxygen_10_avs) if oxygen_10_avs else None,
-                    },
-                    'movement': {
-                        'avg': round(sum(movements) / len(movements), 1) if movements else None,
-                        'min': min(movements) if movements else None,
-                        'max': max(movements) if movements else None,
-                    },
-                    'skin_temperature': {
-                        'avg': round(sum(temperatures) / len(temperatures), 2) if temperatures else None,
-                        'min': round(min(temperatures), 2) if temperatures else None,
-                        'max': round(max(temperatures), 2) if temperatures else None,
-                    },
-                    'battery_percentage': {
-                        'avg': round(sum(battery_percentages) / len(battery_percentages), 1) if battery_percentages else None,
-                        'min': min(battery_percentages) if battery_percentages else None,
-                        'max': max(battery_percentages) if battery_percentages else None,
-                    },
-                    'alerts': {
-                        'low_battery': low_battery_count,
-                        'high_heart_rate': high_hr_count,
-                        'low_oxygen': low_ox_count,
-                        'disconnections': disconnect_count
-                    },
-                    'sleep': {
-                        'asleep': sleep_count,
-                        'awake': awake_count,
                     }
                 }
             
             # Create hourly entry for the past hour
-            hour_agg = aggregate_metrics(past_hour_vitals)
+            hour_agg = aggregate_hour_minutes(past_hour_minutes)
             hour_agg['hour'] = current_hour - 1 if current_hour > 0 else 23  # The hour we just completed
             hour_agg['timestamp_start'] = one_hour_ago.isoformat().replace('+00:00', 'Z')
             hour_agg['timestamp_end'] = current_time.isoformat().replace('+00:00', 'Z')
@@ -479,12 +442,10 @@ class OwletSyncService:
             # Add or update the hourly entry
             if hour_index >= 0:
                 todays_hourly['hourly'][hour_index] = hour_agg
-                logger.info(f"Updated hour {hour_agg['hour']} in today's hourly data ({len(past_hour_vitals)} data points)")
             else:
                 todays_hourly['hourly'].append(hour_agg)
                 # Sort by hour to keep it organized
                 todays_hourly['hourly'].sort(key=lambda x: x.get('hour', 0))
-                logger.info(f"Added hour {hour_agg['hour']} to today's hourly data ({len(past_hour_vitals)} data points)")
             
             # Update metadata
             todays_hourly['last_update'] = current_time.isoformat().replace('+00:00', 'Z')
@@ -496,7 +457,7 @@ class OwletSyncService:
         except Exception as e:
             logger.error(f"Failed to update today's hourly data: {e}")
             import traceback
-            logger.debug(f"Full traceback: {traceback.format_exc()}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
     
     def load_daily_summary(self, date=None):
         """Load a daily summary from file"""
@@ -526,55 +487,29 @@ class OwletSyncService:
     
     def cleanup_yesterdays_data(self):
         """
-        Check if yesterday's summary exists. If yes, delete yesterday's minute-by-minute data.
-        If no, create yesterday's summary from history, then delete the minute-by-minute data.
+        Check if yesterday's summary exists. If yes, keep it.
+        If no, create yesterday's summary from minute data.
         """
         try:
-            current_time = datetime.now(timezone.utc)
+            current_time = self.get_local_time()
             yesterday = (current_time - timedelta(days=1)).date()
             
             yesterday_summary_file = self.get_daily_summary_filename(yesterday)
             
             # Check if yesterday's summary already exists
-            if os.path.exists(yesterday_summary_file):
-                logger.info(f"Yesterday's summary already exists: {yesterday_summary_file}")
-            else:
-                logger.info(f"Yesterday's summary not found. Creating from historical data...")
+            if not os.path.exists(yesterday_summary_file):
+                # Load minute data for yesterday
+                yesterday_minutes = self.load_daily_minutes(yesterday)
                 
-                # Load history to check for yesterday's data
-                history = self.load_history()
-                if not history:
-                    logger.warning("No historical data available to create yesterday's summary")
-                    return
-                
-                # Filter history for yesterday's data only
-                yesterday_vitals = []
-                yesterday_start = datetime.combine(yesterday, datetime.min.time(), tzinfo=timezone.utc)
-                yesterday_end = datetime.combine(yesterday, datetime.max.time(), tzinfo=timezone.utc)
-                
-                for vital in history:
-                    try:
-                        vital_time = datetime.fromisoformat(vital['timestamp'].replace('Z', '+00:00'))
-                        if yesterday_start <= vital_time <= yesterday_end:
-                            yesterday_vitals.append(vital)
-                    except Exception as e:
-                        logger.warning(f"Could not parse vital timestamp: {vital.get('timestamp')}, {e}")
-                
-                if yesterday_vitals:
-                    logger.info(f"Found {len(yesterday_vitals)} data points for yesterday")
-                    summary = self.aggregate_vitals_to_summary(yesterday_vitals)
+                if yesterday_minutes:
+                    summary = self.aggregate_vitals_to_summary(yesterday)
                     if summary:
                         self.save_daily_summary(summary, yesterday)
-                        logger.info(f"Created yesterday's summary with {summary['data_points']} data points")
-                else:
-                    logger.info("No historical data found for yesterday")
-            
-            logger.info(f"Daily cleanup completed at {current_time.isoformat()}")
             
         except Exception as e:
             logger.error(f"Error during daily cleanup: {e}")
             import traceback
-            logger.debug(f"Full traceback: {traceback.format_exc()}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
     
     async def authenticate(self):
         """Authenticate with Owlet API"""
@@ -593,7 +528,6 @@ class OwletSyncService:
             
             self.api = OwletAPI(region, email, password)
             await self.api.authenticate()
-            logger.info("Successfully authenticated with Owlet API")
             return True
         except Exception as e:
             logger.error(f"Authentication failed: {e}")
@@ -618,7 +552,6 @@ class OwletSyncService:
             # Handle response wrapper (API returns {'response': [...]})
             if isinstance(devices, dict) and 'response' in devices:
                 devices_list = devices['response']
-                logger.debug(f"Extracted devices from response wrapper: {len(devices_list)} device(s)")
             else:
                 devices_list = devices
             
@@ -628,34 +561,24 @@ class OwletSyncService:
             
             # Get first device (usually only one sock)
             try:
-                logger.debug(f"First device structure: {devices_list[0]}")
-                
                 # Extract device data
                 if isinstance(devices_list[0], dict) and 'device' in devices_list[0]:
                     device_data = devices_list[0]['device']
-                    logger.debug(f"Extracted device from wrapper")
                 else:
                     device_data = devices_list[0]
-                
-                logger.debug(f"Device data: {device_data}")
                 
                 if not device_data:
                     logger.error(f"Invalid device data")
                     return None
                 
-                logger.info(f"Creating Sock object for device: {device_data.get('dsn', 'unknown')}")
                 sock = Sock(self.api, device_data)
-                
-                logger.debug(f"Updating sock properties...")
                 await sock.update_properties()
                 
-                logger.info(f"Successfully fetched data for device: {device_data.get('dsn', 'unknown')}")
                 return sock
             except Exception as e:
                 logger.error(f"Error processing device: {e}")
-                logger.debug(f"Devices content: {devices_list}")
                 import traceback
-                logger.debug(f"Full traceback: {traceback.format_exc()}")
+                logger.error(f"Full traceback: {traceback.format_exc()}")
                 return None
                 
         except Exception as e:
@@ -690,40 +613,24 @@ class OwletSyncService:
                 'skin_temp': props.get('skin_temperature'),
             }
             
-            logger.info(f"Extracted vitals: HR={vital['heart_rate']}, O2={vital['oxygen_saturation']}%, Battery={vital['battery_percentage']}% ({vital['battery_minutes']} min), Connected={vital['sock_connected']}, Temp={vital['skin_temperature']}C, Sleep={vital['sleep_state']}")
-            logger.debug(f"Sleep state value: {vital['sleep_state']} (type: {type(vital['sleep_state'])})")
+            # Log the vital data we use from the API
+            logger.info(f"Vital data - HR: {vital['heart_rate']}, O2: {vital['oxygen_saturation']}%, O2 Avg: {vital['oxygen_10_av']}%, Battery: {vital['battery_percentage']}%, Skin Temp: {vital['skin_temperature']}°C, Movement: {vital['movement']}, Signal: {vital['signal_strength']}, Sleep: {vital['sleep_state']}")
+            
             return vital
         except Exception as e:
             logger.error(f"Failed to extract vital data: {e}")
             import traceback
-            logger.debug(f"Full traceback: {traceback.format_exc()}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             return None
     
     def detect_sleep_state(self, sock):
-        """Detect if baby is asleep based on Owlet data and recent vitals"""
+        """Detect if baby is asleep based on Owlet data"""
         try:
             props = sock.properties if hasattr(sock, 'properties') else {}
             
             # Check Owlet's sleep_state: 0=unknown, 1=awake, 2=asleep
             sleep_state = props.get('sleep_state', 0)
             is_sleeping = sleep_state == 2  # 2 means asleep
-            
-            # Enhanced detection: use heart rate and movement patterns
-            if not is_sleeping and self.config.get('sleep_detection_enabled', True):
-                vitals = self.load_vitals()
-                if len(vitals) >= 3:
-                    # Check last 3 readings for consistent low movement/heart rate
-                    recent_vitals = vitals[:3]
-                    avg_hr = sum(v.get('heart_rate', 0) or 0 for v in recent_vitals) / len(recent_vitals)
-                    avg_movement = sum(v.get('movement', 0) or 0 for v in recent_vitals) / len(recent_vitals)
-                    
-                    hr_low = self.config.get('sleep_detection_threshold_hr_low', 60)
-                    hr_high = self.config.get('sleep_detection_threshold_hr_high', 120)
-                    movement_threshold = self.config.get('sleep_detection_movement_threshold', 10)
-                    
-                    # Consider asleep if HR is stable and movement is low
-                    if hr_low <= avg_hr <= hr_high and avg_movement < movement_threshold:
-                        is_sleeping = True
             
             return is_sleeping
         except Exception as e:
@@ -749,7 +656,6 @@ class OwletSyncService:
                 now_utc = datetime.now(timezone.utc)
                 time_diff = now_utc - last_time
                 if time_diff.total_seconds() < 300:  # 5 minutes
-                    logger.info(f"Skipping duplicate {event_type} event")
                     return False
             
             return True
@@ -776,7 +682,6 @@ class OwletSyncService:
             
             response = requests.post(php_endpoint, json=event_data)
             if response.status_code == 200:
-                logger.info(f"Created event: {event_type}")
                 return True
             else:
                 logger.error(f"Failed to create event: {response.text}")
@@ -791,13 +696,11 @@ class OwletSyncService:
         
         # Perform daily cleanup if needed (check and archive yesterday's data)
         if self.should_perform_daily_cleanup():
-            logger.info("Performing daily cleanup...")
             self.cleanup_yesterdays_data()
             self.last_daily_cleanup_time = datetime.now(timezone.utc)
         
         # Update today's hourly data if needed (every hour)
         if self.should_update_hourly():
-            logger.info("Updating today's hourly data...")
             self.update_todays_hourly()
             self.last_hourly_update_time = datetime.now(timezone.utc)
         
@@ -819,37 +722,8 @@ class OwletSyncService:
             # Save real-time data (latest only)
             self.save_latest(vital)
             
-            # Save to legacy vitals file for backward compatibility
-            vitals = self.load_vitals()
-            vitals.insert(0, vital)
-            if self.config.get('retention_enabled', True):
-                vitals = self.cleanup_old_vitals(vitals)
-            self.save_vitals(vitals)
-            
-            # Save to historical data if minute interval has passed
-            history_interval_seconds = self.config.get('history_interval_seconds', 60)
-            current_time = datetime.now(timezone.utc)
-            
-            # Check if we should save to history (once per minute by default)
-            should_save_history = False
-            if self.last_history_save_time is None:
-                # First time, always save
-                should_save_history = True
-            else:
-                time_since_last_save = (current_time - self.last_history_save_time).total_seconds()
-                if time_since_last_save >= history_interval_seconds:
-                    should_save_history = True
-            
-            if should_save_history:
-                history = self.load_history()
-                history.insert(0, vital)
-                # Cleanup old history entries
-                retention_hours = self.config.get('retention_hours', 48)
-                cutoff_time = current_time - timedelta(hours=retention_hours)
-                history = [h for h in history if datetime.fromisoformat(h['timestamp'].replace('Z', '+00:00')) > cutoff_time]
-                self.save_history(history)
-                self.last_history_save_time = current_time
-                logger.info(f"Saved to historical data. Total history entries: {len(history)}")
+            # Process vital through minute buffer - accumulates readings and saves minute averages
+            self.process_minute_buffer(vital)
         
         # Detect sleep state and create events if needed
         if self.config.get('auto_create_events', True):
@@ -879,52 +753,32 @@ class OwletSyncService:
                 if hasattr(self.api, 'session') and self.api.session:
                     await self.api.session.close()
                 self.api = None
-                logger.info("API session closed")
             except Exception as e:
                 logger.warning(f"Error closing API session: {e}")
     
-    def is_sync_enabled(self):
-        """Check if sync should run (only when Owlet view is open)"""
-        return os.path.exists(self.trigger_file)
-    
     async def run_service(self):
-        """Run the service continuously - only syncs when Owlet view is open"""
+        """Run the service continuously"""
         # Support both minutes and seconds for flexibility
         if 'sync_interval_seconds' in self.config:
             sync_interval_seconds = self.config.get('sync_interval_seconds', 60)
-            logger.info(f"Starting Owlet sync service (interval: {sync_interval_seconds} seconds)")
         else:
             sync_interval = self.config.get('sync_interval_minutes', 1)
             sync_interval_seconds = sync_interval * 60
-            logger.info(f"Starting Owlet sync service (interval: {sync_interval} minutes = {sync_interval_seconds} seconds)")
-        
-        logger.info("Service will only sync when Owlet monitor page is open (trigger file exists)")
         
         try:
             while True:
-                # Check if sync is enabled (trigger file exists)
-                if self.is_sync_enabled():
-                    try:
-                        # Wait for sync to complete before starting the next one
-                        # This prevents stacking calls
-                        await self.sync()
-                    except Exception as e:
-                        logger.error(f"Unexpected error during sync: {e}")
-                    
-                    # Only sleep if sync_interval_seconds > 0
-                    if sync_interval_seconds > 0:
-                        logger.debug(f"Waiting {sync_interval_seconds} seconds before next sync")
-                        await asyncio.sleep(sync_interval_seconds)
-                    else:
-                        # If interval is 0, immediately start the next sync
-                        logger.debug("Starting next sync immediately (no delay)")
-                else:
-                    # No trigger file - Owlet view is closed, wait before checking again
-                    check_interval = 5  # Check every 5 seconds if trigger file appears
-                    logger.debug(f"Owlet view is closed - waiting {check_interval} seconds before checking again")
-                    await asyncio.sleep(check_interval)
+                try:
+                    # Wait for sync to complete before starting the next one
+                    # This prevents stacking calls
+                    await self.sync()
+                except Exception as e:
+                    logger.error(f"Unexpected error during sync: {e}")
+                
+                # Only sleep if sync_interval_seconds > 0
+                if sync_interval_seconds > 0:
+                    await asyncio.sleep(sync_interval_seconds)
         except KeyboardInterrupt:
-            logger.info("Service interrupted by user")
+            pass
         finally:
             await self.close()
 
@@ -941,7 +795,7 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("Service stopped by user")
+        pass
     except Exception as e:
         logger.error(f"Fatal error: {e}")
         sys.exit(1)

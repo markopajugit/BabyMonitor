@@ -1,0 +1,116 @@
+[
+  {
+    "timestamp": "2025-11-20T10:55:00Z",
+    "heart_rate_avg": 142.7,
+    "oxygen_saturation_avg": 96.5,
+    "data_points": 43
+  },
+  {
+    "timestamp": "2025-11-20T10:56:00Z",
+    "heart_rate_avg": 124.4,
+    "oxygen_saturation_avg": 96.1,
+    "data_points": 49
+  },
+  {
+    "timestamp": "2025-11-20T10:57:00Z",
+    "heart_rate_avg": 132.1,
+    "oxygen_saturation_avg": 97.1,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T10:58:00Z",
+    "heart_rate_avg": 123.0,
+    "oxygen_saturation_avg": 97.6,
+    "data_points": 49
+  },
+  {
+    "timestamp": "2025-11-20T10:59:00Z",
+    "heart_rate_avg": 154.5,
+    "oxygen_saturation_avg": 95.4,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:00:00Z",
+    "heart_rate_avg": 178.8,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 47
+  },
+  {
+    "timestamp": "2025-11-20T11:01:00Z",
+    "heart_rate_avg": 182.0,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:02:00Z",
+    "heart_rate_avg": 182.0,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:03:00Z",
+    "heart_rate_avg": 153.0,
+    "oxygen_saturation_avg": 87.1,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:04:00Z",
+    "heart_rate_avg": 169.0,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:05:00Z",
+    "heart_rate_avg": 147.4,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 49
+  },
+  {
+    "timestamp": "2025-11-20T11:06:00Z",
+    "heart_rate_avg": 147.1,
+    "oxygen_saturation_avg": 95.0,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:07:00Z",
+    "heart_rate_avg": 150.0,
+    "oxygen_saturation_avg": 98.1,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:08:00Z",
+    "heart_rate_avg": 146.4,
+    "oxygen_saturation_avg": 97.5,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:09:00Z",
+    "heart_rate_avg": 159.9,
+    "oxygen_saturation_avg": 93.1,
+    "data_points": 49
+  },
+  {
+    "timestamp": "2025-11-20T11:10:00Z",
+    "heart_rate_avg": 149.9,
+    "oxygen_saturation_avg": 97.8,
+    "data_points": 48
+  },
+  {
+    "timestamp": "2025-11-20T11:11:00Z",
+    "heart_rate_avg": 147.3,
+    "oxygen_saturation_avg": 100.0,
+    "data_points": 47
+  },
+  {
+    "timestamp": "2025-11-20T11:16:00Z",
+    "heart_rate_avg": 134.1,
+    "oxygen_saturation_avg": 98.6,
+    "data_points": 23
+  },
+  {
+    "timestamp": "2025-11-20T11:17:00Z",
+    "heart_rate_avg": 139.9,
+    "oxygen_saturation_avg": 95.1,
+    "data_points": 19
+  }
+]

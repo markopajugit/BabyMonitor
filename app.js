@@ -245,10 +245,6 @@
             document.getElementById('owletView').classList.add('active');
             document.getElementById('gridContainer').classList.add('hidden');
             
-            // Enable Owlet sync (create trigger file)
-            fetch('events.php?owlet_sync_trigger=enable')
-                .catch(err => console.error('Failed to enable Owlet sync:', err));
-            
             loadOwletData();
             setupOwletSwipeGesture();
             
@@ -273,10 +269,6 @@
         function closeOwletView() {
             document.getElementById('owletView').classList.remove('active');
             document.getElementById('gridContainer').classList.remove('hidden');
-            
-            // Disable Owlet sync (delete trigger file)
-            fetch('events.php?owlet_sync_trigger=disable')
-                .catch(err => console.error('Failed to disable Owlet sync:', err));
             
             // Stop auto-refresh when closing
             if (owletAutoRefreshInterval) {
@@ -383,8 +375,8 @@
                     return 'gray';
                 };
                 
-                const hrStatus = getVitalStatus(latest_reading.heart_rate, 60, 160, 'HR');
-                const o2Status = getVitalStatus(latest_reading.oxygen_saturation, 95, 100, 'O2');
+                const hrStatus = getVitalStatus(latest_reading.heart_rate, 90, 170, 'HR');
+                const o2Status = getVitalStatus(latest_reading.oxygen_saturation, 90, 100, 'O2');
                 
                 const heartRateDisplay = latest_reading.heart_rate !== null && latest_reading.heart_rate !== undefined 
                     ? latest_reading.heart_rate + ' bpm' 
@@ -433,6 +425,7 @@
                                 <div>
                                     <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Current Vitals</h3>
                                 </div>
+                                <div id="owletLastUpdated" style="font-size: 11px; color: #94a3b8;"></div>
                             </div>
                             
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
@@ -517,6 +510,21 @@
                     const elem = document.getElementById(id);
                     if (elem) elem.textContent = value;
                 };
+                
+                // Format and update last updated timestamp
+                let lastUpdatedText = 'Last Updated: N/A';
+                if (last_update) {
+                    const lastUpdateDate = new Date(last_update);
+                    const year = lastUpdateDate.getFullYear();
+                    const month = String(lastUpdateDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(lastUpdateDate.getDate()).padStart(2, '0');
+                    const hours = String(lastUpdateDate.getHours()).padStart(2, '0');
+                    const minutes = String(lastUpdateDate.getMinutes()).padStart(2, '0');
+                    const seconds = String(lastUpdateDate.getSeconds()).padStart(2, '0');
+                    
+                    lastUpdatedText = `Last Updated: ${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                }
+                updateElement('owletLastUpdated', lastUpdatedText);
                 
                 updateElement('owletHRValue', heartRateDisplay);
                 updateElement('owletO2Value', o2Display);

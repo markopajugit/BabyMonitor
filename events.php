@@ -133,53 +133,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     
     // Check if requesting vitals data
     if (isset($_GET['vitals']) && $_GET['vitals'] === 'true') {
-        // Return Owlet vitals data
-        // Use historical data for analysis (minute-interval data only)
-        $historyFile = 'owlet_history.json';
-        // Fall back to main vitals file if history doesn't exist yet
-        $vitalsFile = file_exists($historyFile) ? $historyFile : 'owlet_vitals.json';
+        // Return Owlet vitals data from latest real-time reading and today's minute data
+        $latestReading = null;
+        $vitals = [];
         
-        if (!file_exists($vitalsFile)) {
-            echo json_encode(['vitals' => [], 'last_update' => null]);
-            exit();
+        // Load latest real-time data
+        $latestFile = 'owlet_latest.json';
+        if (file_exists($latestFile)) {
+            try {
+                $latestData = file_get_contents($latestFile);
+                $latestReading = json_decode($latestData, true);
+            } catch (Exception $e) {
+                logger.warning("Failed to read latest data file: " . $e->getMessage());
+            }
         }
         
-        try {
-            $vitalsData = file_get_contents($vitalsFile);
-            $vitals = json_decode($vitalsData, true);
-            
-            if ($vitals === null) {
-                $vitals = [];
-            }
-            
-            // Load latest real-time data separately
-            $latestReading = null;
-            $latestFile = 'owlet_latest.json';
-            if (file_exists($latestFile)) {
-                try {
-                    $latestData = file_get_contents($latestFile);
-                    $latestReading = json_decode($latestData, true);
-                    
-                    // If history is empty but we have latest data, add it to vitals for display
-                    if (empty($vitals) && !empty($latestReading)) {
-                        $vitals = [$latestReading];
-                    }
-                } catch (Exception $e) {
-                    // Latest file might not exist yet
+        // Load today's minute data for reference
+        $today = date('Y-m-d');
+        $todayMinutesFile = 'owlet_minutes/owlet_minutes_' . $today . '.json';
+        if (file_exists($todayMinutesFile)) {
+            try {
+                $minutesData = file_get_contents($todayMinutesFile);
+                $vitals = json_decode($minutesData, true);
+                if ($vitals === null) {
+                    $vitals = [];
                 }
+            } catch (Exception $e) {
+                logger.warning("Failed to read minute data file: " . $e->getMessage());
             }
-            
-            $response = [
-                'vitals' => array_slice($vitals, 0, 100), // Limit to last 100 readings
-                'last_update' => !empty($vitals) ? $vitals[0]['timestamp'] : null,
-                'latest_reading' => $latestReading !== null ? $latestReading : (!empty($vitals) ? $vitals[0] : null)
-            ];
-            
-            echo json_encode($response);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to read vitals file']);
         }
+        
+        $response = [
+            'vitals' => array_slice($vitals, 0, 100), // Limit to last 100 minute entries
+            'last_update' => $latestReading['timestamp'] ?? (!empty($vitals) ? $vitals[0]['timestamp'] : null),
+            'latest_reading' => $latestReading
+        ];
+        
+        echo json_encode($response);
         exit();
     }
     
@@ -205,39 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to read latest data']);
-        }
-        exit();
-    }
-    
-    // Handle Owlet sync trigger (enable/disable sync)
-    if (isset($_GET['owlet_sync_trigger'])) {
-        $triggerFile = 'owlet_sync_trigger.txt';
-        $action = $_GET['owlet_sync_trigger'];
-        
-        if ($action === 'enable') {
-            // Create trigger file to enable sync
-            if (file_put_contents($triggerFile, date('Y-m-d H:i:s')) !== false) {
-                echo json_encode(['success' => true, 'message' => 'Owlet sync enabled']);
-            } else {
-                http_response_code(500);
-                echo json_encode(['error' => 'Failed to enable sync']);
-            }
-        } elseif ($action === 'disable') {
-            // Delete trigger file to disable sync
-            if (file_exists($triggerFile)) {
-                if (unlink($triggerFile)) {
-                    echo json_encode(['success' => true, 'message' => 'Owlet sync disabled']);
-                } else {
-                    http_response_code(500);
-                    echo json_encode(['error' => 'Failed to disable sync']);
-                }
-            } else {
-                // File doesn't exist, but that's fine - sync is already disabled
-                echo json_encode(['success' => true, 'message' => 'Owlet sync already disabled']);
-            }
-        } else {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid action. Use enable or disable']);
         }
         exit();
     }

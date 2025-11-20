@@ -1,2 +1,21 @@
-{}
-
+{
+  "timestamp": "2025-11-20T11:18:38.649390Z",
+  "heart_rate": 146.0,
+  "oxygen_saturation": 94.0,
+  "oxygen_10_av": 255.0,
+  "movement": 0,
+  "movement_bucket": 8,
+  "battery_percentage": 100.0,
+  "battery_minutes": 980.0,
+  "signal_strength": 54.0,
+  "skin_temperature": 30,
+  "sleep_state": 0,
+  "sock_connected": true,
+  "sock_on": true,
+  "low_battery": false,
+  "high_heart_rate": false,
+  "low_oxygen": false,
+  "charging": 0,
+  "base_station_on": 0,
+  "skin_temp": 30
+}

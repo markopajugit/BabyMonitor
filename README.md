@@ -233,22 +233,27 @@ tail -f owlet_sync.log
 
 ### Data Structure
 
-Owlet vital data is stored in `owlet_vitals.json`:
+Owlet vital data is stored in multiple files for efficient access:
+
+- **`owlet_latest.json`** — Latest real-time vital reading (single entry, updated continuously)
+- **`owlet_minutes/`** — Daily minute-by-minute data files (one file per day: `owlet_minutes_YYYY-MM-DD.json`)
+- **`owlet_todays_hourly.json`** — Today's hourly aggregated data (accumulates throughout the day)
+- **`owlet_daily_summaries/`** — Daily summary files with hourly granularity (one file per day)
+
+Example vital reading structure:
 
 ```json
-[
-  {
-    "timestamp": "2025-11-17T14:30:00Z",
-    "heart_rate": 125,
-    "oxygen_level": 98,
-    "movement": 5,
-    "battery": 85,
-    "sock_connected": true,
-    "low_battery": false,
-    "high_heart_rate": false,
-    "low_oxygen": false
-  }
-]
+{
+  "timestamp": "2025-11-17T14:30:00Z",
+  "heart_rate": 125,
+  "oxygen_level": 98,
+  "movement": 5,
+  "battery": 85,
+  "sock_connected": true,
+  "low_battery": false,
+  "high_heart_rate": false,
+  "low_oxygen": false
+}
 ```
 
 ### API Endpoints for Vital Data
@@ -256,17 +261,22 @@ Owlet vital data is stored in `owlet_vitals.json`:
 ```
 GET http://localhost/events.php?latest=true
 ```
-Returns the latest vital reading.
+Returns the latest real-time vital reading from `owlet_latest.json`.
 
 ```
 GET http://localhost/events.php?vitals=true
 ```
-Returns today's minute-by-minute vital data and analysis.
+Returns today's minute-by-minute vital data from `owlet_minutes/` directory and the latest reading.
+
+```
+GET http://localhost/events.php?todays_hourly=true
+```
+Returns today's hourly aggregated data from `owlet_todays_hourly.json` (accumulates throughout the day).
 
 ```
 GET http://localhost/events.php?summaries=true
 ```
-Returns daily summaries for the past 30 days with hourly granularity.
+Returns daily summaries for the past 30 days with hourly granularity from `owlet_daily_summaries/` directory, including today's in-progress hourly data.
 
 ### Troubleshooting
 
@@ -294,23 +304,30 @@ Returns daily summaries for the past 30 days with hourly granularity.
 
 **Vital data not updating:**
 1. Verify Owlet sock is connected and charging
-2. Check `owlet_vitals.json` to confirm data is being received
-3. Ensure sync interval is reasonable (not too short)
-4. Check PHP file permissions for writing to data files
+2. Check `owlet_latest.json` to confirm data is being received
+3. Check `owlet_minutes/` directory for daily data files
+4. Ensure sync interval is reasonable (not too short)
+5. Check PHP file permissions for writing to data files
 
 ## Files Structure
 
+### Core Application Files
 - `index.html` — UI, interactions, and layout
+- `app.js` — Frontend JavaScript logic
+- `styles.css` — Application styles
 - `events.php` — JSON CRUD (GET, POST, DELETE) with CORS enabled
-- `events.json` — persisted events
-- `owlet_sync.py` — Python service for Owlet integration
-- `owlet_config.json` — Owlet credentials and configuration
-- `owlet_vitals.json` — Real-time and historical Owlet vital data
-- `owlet_latest.json` — Latest vital reading (for real-time display)
-- `owlet_history.json` — Minute-interval historical vital data
-- `owlet_daily_summaries/` — Daily summary files (hourly aggregates)
+- `events.json` — Persisted baby events
 - `manifest.json` — PWA metadata
 - Icons — Apple touch icons and PWA icons
+
+### Owlet Integration Files
+- `owlet_sync.py` — Python service for Owlet integration
+- `owlet_config.json` — Owlet credentials and configuration
+- `owlet_latest.json` — Latest real-time vital reading (single entry)
+- `owlet_todays_hourly.json` — Today's hourly aggregated data
+- `owlet_minutes/` — Daily minute-by-minute data files (`owlet_minutes_YYYY-MM-DD.json`)
+- `owlet_daily_summaries/` — Daily summary files with hourly granularity
+- `owlet_sync.log` — Service activity log
 - `requirements.txt` — Python dependencies for Owlet integration
 
 ## App Features
