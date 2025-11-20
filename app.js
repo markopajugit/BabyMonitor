@@ -286,7 +286,9 @@
             if (owletAutoRefreshInterval) clearTimeout(owletAutoRefreshInterval);
             const scheduleOwletRefresh = () => {
                 if (document.getElementById('owletView').classList.contains('active')) {
-                    loadOwletData().finally(() => {
+                    loadOwletData().catch((err) => {
+                        console.error('Error in auto-refresh:', err);
+                    }).finally(() => {
                         owletAutoRefreshInterval = setTimeout(scheduleOwletRefresh, 1000);
                     });
                 } else {
@@ -306,7 +308,7 @@
             
             // Stop auto-refresh when closing
             if (owletAutoRefreshInterval) {
-                clearInterval(owletAutoRefreshInterval);
+                clearTimeout(owletAutoRefreshInterval);
                 owletAutoRefreshInterval = null;
             }
         }
@@ -3148,14 +3150,19 @@
                 startFeedMonitoring();
             } else if (Notification.permission !== 'denied') {
                 // Ask for permission only if not denied before
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        console.log('Notification permission granted');
-                        startFeedMonitoring();
-                    } else {
-                        console.log('Notification permission denied');
-                    }
-                });
+                // Use setTimeout to defer permission request so it doesn't block updates
+                setTimeout(() => {
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === 'granted') {
+                            console.log('Notification permission granted');
+                            startFeedMonitoring();
+                        } else {
+                            console.log('Notification permission denied');
+                        }
+                    }).catch((err) => {
+                        console.log('Error requesting notification permission:', err);
+                    });
+                }, 100); // Small delay to prevent blocking
             } else {
                 // Permission was previously denied, still start monitoring but without notifications
                 startFeedMonitoring();
@@ -3177,49 +3184,59 @@
 
         // Check if a feed is still active (started but not ended)
         function checkActiveFeed() {
-            const now = new Date().getTime();
-            const ONE_HOUR = 60 * 60 * 1000;
+            try {
+                const now = new Date().getTime();
+                const ONE_HOUR = 60 * 60 * 1000;
 
-            // Get all feed events
-            const feedEvents = events.filter(e => e.type === 'Feed Start' || e.type === 'Feed End');
-            
-            // Sort by time descending
-            const sorted = [...feedEvents].sort((a, b) => new Date(b.time) - new Date(a.time));
-
-            // Check for incomplete feeds (Feed Start without corresponding Feed End)
-            for (let i = 0; i < sorted.length; i++) {
-                const event = sorted[i];
-                
-                if (event.type === 'Feed Start') {
-                    // Check if there's a corresponding Feed End after this Feed Start
-                    const feedStartTime = new Date(event.time).getTime();
-                    const hasCorrespondingEnd = sorted.slice(0, i).some(e => 
-                        e.type === 'Feed End' && new Date(e.time).getTime() > feedStartTime
-                    );
-
-                    if (!hasCorrespondingEnd) {
-                        // This feed hasn't ended
-                        const feedDuration = now - feedStartTime;
-
-                        if (feedDuration > ONE_HOUR) {
-                            // Feed has lasted more than 1 hour
-                            const durationHours = Math.floor(feedDuration / (60 * 60 * 1000));
-                            const durationMinutes = Math.floor((feedDuration % (60 * 60 * 1000)) / (60 * 1000));
-                            
-                            // Send notification only once per feed
-                            if (!notificationSentForFeedId[event.id]) {
-                                sendLongFeedNotification(durationHours, durationMinutes, event);
-                                notificationSentForFeedId[event.id] = true;
-                            }
-                        }
-                    } else {
-                        // Feed has ended, clear the flag for this feed
-                        delete notificationSentForFeedId[event.id];
-                    }
-                    
-                    // Only check the most recent incomplete feed
-                    break;
+                // Get all feed events
+                if (!events || !Array.isArray(events)) {
+                    console.log('Events not loaded yet');
+                    return;
                 }
+
+                const feedEvents = events.filter(e => e.type === 'Feed Start' || e.type === 'Feed End');
+                
+                // Sort by time descending
+                const sorted = [...feedEvents].sort((a, b) => new Date(b.time) - new Date(a.time));
+
+                // Check for incomplete feeds (Feed Start without corresponding Feed End)
+                for (let i = 0; i < sorted.length; i++) {
+                    const event = sorted[i];
+                    
+                    if (event.type === 'Feed Start') {
+                        // Check if there's a corresponding Feed End after this Feed Start
+                        const feedStartTime = new Date(event.time).getTime();
+                        const hasCorrespondingEnd = sorted.slice(0, i).some(e => 
+                            e.type === 'Feed End' && new Date(e.time).getTime() > feedStartTime
+                        );
+
+                        if (!hasCorrespondingEnd) {
+                            // This feed hasn't ended
+                            const feedDuration = now - feedStartTime;
+
+                            if (feedDuration > ONE_HOUR) {
+                                // Feed has lasted more than 1 hour
+                                const durationHours = Math.floor(feedDuration / (60 * 60 * 1000));
+                                const durationMinutes = Math.floor((feedDuration % (60 * 60 * 1000)) / (60 * 1000));
+                                
+                                // Send notification only once per feed
+                                if (!notificationSentForFeedId[event.id]) {
+                                    sendLongFeedNotification(durationHours, durationMinutes, event);
+                                    notificationSentForFeedId[event.id] = true;
+                                }
+                            }
+                        } else {
+                            // Feed has ended, clear the flag for this feed
+                            delete notificationSentForFeedId[event.id];
+                        }
+                        
+                        // Only check the most recent incomplete feed
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking active feed:', error);
+                // Continue monitoring despite errors
             }
         }
 
