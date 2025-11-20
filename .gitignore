@@ -19,6 +19,10 @@ events.json
 *.log
 owlet_sync.log
 
+# JSON files (data files, exclude manifest.json which is needed for PWA)
+*.json
+!manifest.json
+
 # Cursor IDE
 .cursor/
 
