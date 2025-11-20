@@ -51,6 +51,7 @@ body {
     grid-template-rows: repeat(4, 1fr);
     gap: 16px;
     padding: 16px;
+    padding-top: 40px;
     height: 100vh;
     height: 100dvh;
     transition: opacity 0.3s ease, transform 0.3s ease;
