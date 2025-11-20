@@ -4,7 +4,17 @@ Simple, mobile‑first web app to quickly log baby events (feed, sleep, diaper, 
 
 ## Overview
 
-The app is designed to be added to an iOS home screen and used like a lightweight native app. UI is intentionally minimal and touch‑first: large tiles on a grid for one‑tap actions and a simple list to review history.
+The app is designed to be added to an iOS home screen and used like a lightweight native app. UI is intentionally minimal and touch‑first: large tiles on a grid for one‑tap actions and multiple views to review history, milestones, daily timelines, and vital signs.
+
+### Key Features
+
+- ✅ **Quick Event Logging** - One-tap logging for Feed Start/End, Sleep Start/End, and Diaper changes
+- ✅ **Custom Events** - Add detailed events with notes (Medicine, Bath, Doctor Visit, Milestones, etc.)
+- ✅ **Day Timeline View** - Visual timeline showing sleep and feed periods with daily statistics
+- ✅ **Milestones View** - Dedicated view for tracking baby's special moments
+- ✅ **Owlet Integration** - Real-time vital monitoring (heart rate, oxygen level, movement) with historical charts
+- ✅ **PWA Support** - Install as a standalone app on iOS/Android
+- ✅ **Offline-First** - Works locally, no internet required for basic event tracking
 
 ## Tech Stack
 
@@ -12,6 +22,7 @@ The app is designed to be added to an iOS home screen and used like a lightweigh
 - **Backend:** `events.php` (single PHP file)
 - **Storage:** `events.json` (flat JSON file on disk)
 - **Optional:** `owlet_sync.py` (Python service for Owlet Smart Sock data)
+- **Charts:** Chart.js for vital sign visualization
 
 No database, no auth, just simple CRUD via PHP.
 
@@ -26,24 +37,30 @@ No database, no auth, just simple CRUD via PHP.
 
 From the project root:
 
+**Windows:**
 ```bash
 php -S 0.0.0.0:8000 -t C:\Projects\BabyMonitor
+```
+
+**Linux/Mac:**
+```bash
+php -S 0.0.0.0:8000 -t /path/to/BabyMonitor
 ```
 
 Then open `http://localhost:8000` on your computer.
 
 ### Using on iPhone
 
-1. Find your computer's IP address:
-   - Open Command Prompt (Windows Key + R, type `cmd`)
-   - Run: `ipconfig`
-   - Look for "IPv4 Address" under your WiFi adapter (e.g., 192.168.1.100)
+1. **Find your computer's IP address:**
+   - **Windows:** Open Command Prompt (Win + R, type `cmd`), run `ipconfig`, look for "IPv4 Address" under your WiFi adapter
+   - **Linux/Mac:** Run `ifconfig` or `ip addr`, look for your WiFi adapter's IP address
+   - Example: `192.168.1.100`
 
-2. On your iPhone Safari, navigate to:
+2. **On your iPhone Safari, navigate to:**
    - `http://YOUR-IP-ADDRESS:8000` (e.g., `http://192.168.1.100:8000`)
    - **Make sure your iPhone and computer are on the same WiFi network!**
 
-3. Add to Home Screen:
+3. **Add to Home Screen:**
    - Tap the **Share** button (square with arrow pointing up)
    - Scroll down and tap **"Add to Home Screen"**
    - Name it "Baby Monitor"
@@ -51,27 +68,86 @@ Then open `http://localhost:8000` on your computer.
    - The app will appear on your home screen with the diaper icon
    - Tap it to launch in full-screen mode (no Safari UI)
 
+### Using on Android
+
+1. Follow the same steps as iPhone to access the app via your computer's IP address
+2. In Chrome, tap the menu (three dots) → **"Add to Home screen"**
+3. The app will install as a PWA and launch in standalone mode
+
 ## Using the App
+
+### Main Grid View
+
+The home screen displays a grid of quick-action buttons:
+
+- **💓 Owlet Monitor** - View real-time vital signs and charts
+- **📅 View Day** - See today's timeline with sleep/feed periods
+- **⭐ View Milestones** - Browse all recorded milestones
+- **🩱 Quick Diaper** - One-tap diaper change logging
+- **🍼 Feed Start/End** - Log feeding sessions
+- **😴 Sleep Start/End** - Log sleep periods
 
 ### Quick Events (One-Tap)
 
-- **Feed**: Tap to log feeding instantly
-- **Sleep**: Tap to log sleep instantly
-- **Diaper**: Tap to log diaper change instantly
+Tap any of these buttons to instantly log an event with the current timestamp:
+- **Feed Start** / **Feed End** - Track feeding sessions
+- **Sleep Start** / **Sleep End** - Track sleep periods
+- **Quick Diaper** - Log diaper changes
 
 ### Custom Events
 
-1. Tap **"Add Event"**
-2. Select event type
-3. Time is pre-filled with current time
+1. Tap any quick-action button (opens the event modal)
+2. Select event type from dropdown:
+   - 🍼 Feed Start / Feed End
+   - 😴 Sleep Start / Sleep End
+   - 🩱 Diaper Change
+   - 💊 Medicine
+   - 🛁 Bath Time
+   - 👨‍⚕️ Doctor Visit
+   - ⭐ Milestone
+   - 📝 Other
+3. Time is pre-filled with current time (adjustable)
 4. Add optional notes
 5. Tap **"Save Event"**
 
-### View History
+### Day Timeline View
 
-1. Tap **"View Events"**
-2. Scroll through chronological list
-3. See all details
+The **View Day** screen provides:
+- **Visual Timeline** - Color-coded bars showing sleep (blue) and feed (green) periods throughout the day
+- **Date Navigation** - Navigate between days with ← → buttons
+- **Daily Statistics**:
+  - Total sleep duration
+  - Total feeding duration
+  - Diaper change count
+  - Total events count
+- **Event List** - Chronological list of all events for the selected day
+- **Interactive Timeline** - Tap on the timeline to see what was happening at specific times
+
+### Milestones View
+
+- **Grid Layout** - Milestones displayed in an easy-to-browse grid
+- **Add Milestone** - Tap the ➕ button to add a new milestone
+- **Filtered View** - Shows only events marked as "Milestone" type
+
+### Owlet Monitor View
+
+**Real-Time Monitoring:**
+- Latest heart rate, oxygen level, and movement
+- Sock connection status and battery level
+- Alert indicators (low oxygen, high heart rate, low battery)
+- Auto-refreshes every 5 seconds
+
+**Historical Charts:**
+- Tap **📊** button to view historical data
+- Navigate between days with date navigation
+- View heart rate and oxygen level trends
+- See hourly aggregated data
+
+### View Events History
+
+1. Tap **"View Events"** (if available) or navigate through timeline view
+2. Scroll through chronological list (most recent first)
+3. See all event details including time, type, and notes
 4. Tap **"←"** to go back
 
 ## API
@@ -80,47 +156,74 @@ Base URL: `/events.php`
 
 ### Endpoints
 
-- **GET** `/events.php`
-  - Returns an array of events (most recent first)
+#### GET `/events.php`
+Returns an array of events (most recent first).
 
-- **POST** `/events.php`
-  - Content‑Type: `application/json`
-  - Body fields (required): `id`, `type`, `icon`, `time`
-  - Optional fields: `notes`, `meta` (any JSON object)
-  - Creates a new event or updates an existing event by `id`
+**Query Parameters:**
+- `latest=true` - Returns latest Owlet vital reading
+- `vitals=true` - Returns today's minute-by-minute vital data
+- `todays_hourly=true` - Returns today's hourly aggregated data
+- `summaries=true` - Returns daily summaries for past 30 days
 
-- **DELETE** `/events.php`
-  - Content‑Type: `application/json`
-  - Body: `{ "id": "<event-id>" }`
+#### POST `/events.php`
+Creates a new event or updates an existing event by `id`.
+
+**Headers:**
+- `Content-Type: application/json`
+
+**Body Fields:**
+- `id` (required) - Unique event identifier (timestamp recommended)
+- `type` (required) - Event type (e.g., "Feed Start", "Sleep End", "Diaper", "Milestone")
+- `icon` (required) - Emoji icon for the event
+- `time` (required) - ISO 8601 timestamp (e.g., "2025-10-13T07:45:00.000Z")
+- `notes` (optional) - Additional notes or details
+- `meta` (optional) - Any JSON object for additional metadata
+
+#### DELETE `/events.php`
+Deletes an event by `id`.
+
+**Headers:**
+- `Content-Type: application/json`
+
+**Body:**
+```json
+{ "id": "<event-id>" }
+```
 
 ### Example Event Object
 
 ```json
 {
   "id": "1697222400000",
-  "type": "feed",
+  "type": "Feed Start",
   "icon": "🍼",
   "time": "2025-10-13T07:45:00.000Z",
   "notes": "120ml bottle",
-  "meta": { "amountMl": 120 }
+  "meta": {
+    "amountMl": 120,
+    "method": "bottle"
+  }
 }
 ```
 
 ### cURL Examples
 
 ```bash
-# List events
+# List all events
 curl http://localhost:8000/events.php
+
+# Get latest Owlet vital reading
+curl http://localhost:8000/events.php?latest=true
 
 # Add/update event
 curl -X POST http://localhost:8000/events.php \
   -H "Content-Type: application/json" \
   -d '{
     "id":"1697222400000",
-    "type":"sleep",
+    "type":"Sleep Start",
     "icon":"😴",
     "time":"2025-10-13T02:10:00.000Z",
-    "notes":"nap"
+    "notes":"night sleep"
   }'
 
 # Delete event
@@ -133,7 +236,7 @@ curl -X DELETE http://localhost:8000/events.php \
 
 ### Installation
 
-1. Install Python dependencies:
+1. **Install Python dependencies:**
 
 ```bash
 # Windows
@@ -143,7 +246,7 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
-2. Configure Owlet credentials in `owlet_config.json`:
+2. **Configure Owlet credentials in `owlet_config.json`:**
 
 ```json
 {
@@ -153,33 +256,34 @@ pip3 install -r requirements.txt
   "sync_interval_minutes": 15,
   "retention_hours": 48,
   "auto_create_events": true,
-  "php_api_endpoint": "http://localhost/events.php"
+  "php_api_endpoint": "http://localhost:8000/events.php"
 }
 ```
 
 ### Configuration Options
 
-- **email**: Your Owlet account email
-- **password**: Your Owlet account password
-- **region**: Server region (`us-east-1`, `eu-west-1`, etc.)
-- **sync_interval_minutes**: How often to fetch data (default: 15 minutes)
-- **retention_hours**: How long to keep vital history (default: 48 hours)
-- **auto_create_events**: Auto-create Sleep Start/End events (true/false)
-- **php_api_endpoint**: URL to your Baby Monitor API
+- **email** - Your Owlet account email
+- **password** - Your Owlet account password
+- **region** - Server region (`us-east-1`, `eu-west-1`, etc.)
+- **sync_interval_minutes** - How often to fetch data (default: 15 minutes)
+- **retention_hours** - How long to keep vital history (default: 48 hours)
+- **auto_create_events** - Auto-create Sleep Start/End events based on movement patterns (true/false)
+- **php_api_endpoint** - URL to your Baby Monitor API endpoint
 
 ### Starting the Service
 
+**Windows:**
 ```bash
-# Windows
 start_owlet_service.bat
+```
 
-# Linux/Mac
+**Linux/Mac:**
+```bash
 chmod +x start_owlet_service.sh
 ./start_owlet_service.sh
 ```
 
-Or run directly:
-
+**Or run directly:**
 ```bash
 python3 owlet_sync.py
 ```
@@ -221,7 +325,7 @@ sudo systemctl start owlet-sync
 
 ### Monitoring Service Activity
 
-Check `owlet_sync.log` for:
+Check `owlet_sync.log` for activity:
 
 ```bash
 # Windows
@@ -238,9 +342,9 @@ Owlet vital data is stored in multiple files for efficient access:
 - **`owlet_latest.json`** — Latest real-time vital reading (single entry, updated continuously)
 - **`owlet_minutes/`** — Daily minute-by-minute data files (one file per day: `owlet_minutes_YYYY-MM-DD.json`)
 - **`owlet_todays_hourly.json`** — Today's hourly aggregated data (accumulates throughout the day)
-- **`owlet_daily_summaries/`** — Daily summary files with hourly granularity (one file per day)
+- **`owlet_daily_summaries/`** — Daily summary files with hourly granularity (one file per day: `owlet_summary_YYYY-MM-DD.json`)
 
-Example vital reading structure:
+**Example vital reading structure:**
 
 ```json
 {
@@ -258,23 +362,27 @@ Example vital reading structure:
 
 ### API Endpoints for Vital Data
 
+**Get latest vital reading:**
 ```
-GET http://localhost/events.php?latest=true
+GET http://localhost:8000/events.php?latest=true
 ```
 Returns the latest real-time vital reading from `owlet_latest.json`.
 
+**Get today's minute-by-minute data:**
 ```
-GET http://localhost/events.php?vitals=true
+GET http://localhost:8000/events.php?vitals=true
 ```
 Returns today's minute-by-minute vital data from `owlet_minutes/` directory and the latest reading.
 
+**Get today's hourly aggregated data:**
 ```
-GET http://localhost/events.php?todays_hourly=true
+GET http://localhost:8000/events.php?todays_hourly=true
 ```
 Returns today's hourly aggregated data from `owlet_todays_hourly.json` (accumulates throughout the day).
 
+**Get daily summaries:**
 ```
-GET http://localhost/events.php?summaries=true
+GET http://localhost:8000/events.php?summaries=true
 ```
 Returns daily summaries for the past 30 days with hourly granularity from `owlet_daily_summaries/` directory, including today's in-progress hourly data.
 
@@ -309,153 +417,153 @@ Returns daily summaries for the past 30 days with hourly granularity from `owlet
 4. Ensure sync interval is reasonable (not too short)
 5. Check PHP file permissions for writing to data files
 
-## Files Structure
-
-### Core Application Files
-- `index.html` — UI, interactions, and layout
-- `app.js` — Frontend JavaScript logic
-- `styles.css` — Application styles
-- `events.php` — JSON CRUD (GET, POST, DELETE) with CORS enabled
-- `events.json` — Persisted baby events
-- `manifest.json` — PWA metadata
-- Icons — Apple touch icons and PWA icons
-
-### Owlet Integration Files
-- `owlet_sync.py` — Python service for Owlet integration
-- `owlet_config.json` — Owlet credentials and configuration
-- `owlet_latest.json` — Latest real-time vital reading (single entry)
-- `owlet_todays_hourly.json` — Today's hourly aggregated data
-- `owlet_minutes/` — Daily minute-by-minute data files (`owlet_minutes_YYYY-MM-DD.json`)
-- `owlet_daily_summaries/` — Daily summary files with hourly granularity
-- `owlet_sync.log` — Service activity log
-- `requirements.txt` — Python dependencies for Owlet integration
-
-## App Features
-
-### Disabled (For App-Like Experience)
-
-✅ Zoom disabled - No pinch-to-zoom  
-✅ Scroll disabled - Fixed layout  
-✅ Text selection disabled - No accidental selections  
-✅ Double-tap zoom disabled  
-✅ Pull-to-refresh disabled  
-✅ Safari UI hidden - Full-screen standalone mode  
-
-### Enabled
-
-✅ Modal scrolling - Scroll inside forms  
-✅ Events list scrolling - Scroll through history  
-✅ Input fields - Text selection in forms  
-
 ## Daily Backup (Production)
 
-The app includes a daily backup script for `events.json` to prevent data loss.
+The app includes a PHP script for backing up events to a database. This provides an additional layer of data protection beyond the JSON file storage.
 
-### Linux/Mac (Production)
+### Database Backup Script
 
-1. Make the backup script executable:
-```bash
-chmod +x backup_events.sh
+**File:** `backup_events_to_db.php`
+
+This script reads `events.json` and backs up all events to a MySQL/MariaDB database table.
+
+### Database Setup
+
+Create a database table:
+
+```sql
+CREATE TABLE events_backups (
+    event_id VARCHAR(50) PRIMARY KEY,
+    event_type VARCHAR(100) NOT NULL,
+    icon VARCHAR(10),
+    event_time DATETIME NOT NULL,
+    notes TEXT,
+    backup_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_event_time (event_time),
+    INDEX idx_backup_date (backup_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-2. Test the script manually:
+### Configuration
+
+Edit database connection settings in `backup_events_to_db.php` or set environment variables:
+- `DB_HOST` - Database host (default: localhost)
+- `DB_NAME` - Database name (default: baby_monitor)
+- `DB_USER` - Database user (default: root)
+- `DB_PASS` - Database password (default: empty)
+
+### Running the Backup
+
+**Manual execution:**
 ```bash
-./backup_events.sh
+php backup_events_to_db.php
 ```
 
-3. Set up a daily cron job (runs at 2 AM):
+**Linux/Mac - Daily cron job (runs at 2 AM):**
 ```bash
 crontab -e
 ```
 
 Add this line:
 ```bash
-0 2 * * * /path/to/BabyMonitor/backup_events.sh >> /path/to/BabyMonitor/backup.log 2>&1
+0 2 * * * /usr/bin/php /path/to/BabyMonitor/backup_events_to_db.php >> /path/to/BabyMonitor/backup_events.log 2>&1
 ```
 
-Replace `/path/to/BabyMonitor` with your actual project path (e.g., `/var/www/BabyMonitor`).
+**Windows - Task Scheduler:**
+1. Open Task Scheduler (Win + R, type `taskschd.msc`)
+2. Create Basic Task
+3. Name: "Baby Monitor Events Backup"
+4. Trigger: Daily at 2:00 AM
+5. Action: Start a program
+6. Program: `php`
+7. Arguments: `C:\Projects\BabyMonitor\backup_events_to_db.php`
+8. Start in: `C:\Projects\BabyMonitor`
 
-**Alternative: Using systemd timer (recommended for systemd-based systems)**
+### Backup Logs
 
-Create `/etc/systemd/system/events-backup.service`:
-```ini
-[Unit]
-Description=Daily backup of events.json
-After=network.target
+Check `backup_events.log` for backup activity and any errors.
 
-[Service]
-Type=oneshot
-User=www-data
-WorkingDirectory=/var/www/BabyMonitor
-ExecStart=/var/www/BabyMonitor/backup_events.sh
-```
+## File Structure
 
-Create `/etc/systemd/system/events-backup.timer`:
-```ini
-[Unit]
-Description=Daily backup timer for events.json
-Requires=events-backup.service
+### Core Application Files
+- `index.html` — UI, interactions, and layout
+- `app.js` — Frontend JavaScript logic (event handling, views, API calls)
+- `styles.css` — Application styles
+- `events.php` — JSON CRUD API (GET, POST, DELETE) with CORS enabled
+- `events.json` — Persisted baby events (JSON array)
+- `manifest.json` — PWA metadata and configuration
+- Icons — Apple touch icons and PWA icons (`apple-touch-icon.png`, `icon-512.png`, etc.)
 
-[Timer]
-OnCalendar=daily
-OnCalendar=02:00
-Persistent=true
+### Owlet Integration Files
+- `owlet_sync.py` — Python service for Owlet integration
+- `owlet_config.json` — Owlet credentials and configuration (⚠️ contains sensitive data)
+- `owlet_latest.json` — Latest real-time vital reading (single entry, auto-updated)
+- `owlet_todays_hourly.json` — Today's hourly aggregated data
+- `owlet_minutes/` — Daily minute-by-minute data files (`owlet_minutes_YYYY-MM-DD.json`)
+- `owlet_daily_summaries/` — Daily summary files with hourly granularity (`owlet_summary_YYYY-MM-DD.json`)
+- `owlet_sync.log` — Service activity log
+- `requirements.txt` — Python dependencies for Owlet integration
+- `start_owlet_service.bat` / `start_owlet_service.sh` — Service startup scripts
 
-[Install]
-WantedBy=timers.target
-```
+### Backup Files
+- `backup_events_to_db.php` — Database backup script
 
-Then enable and start:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable events-backup.timer
-sudo systemctl start events-backup.timer
-```
+### Utility Scripts
+- `generate_owlet_dummy_data.py` — Generate test data for Owlet features
+- `generate_summaries.py` — Generate daily summaries from minute data
 
-### Windows (Development/Testing)
+## App Features
 
-1. Test the script manually:
-```cmd
-backup_events.bat
-```
+### Disabled (For App-Like Experience)
 
-2. Set up Task Scheduler:
-   - Open Task Scheduler (Win + R, type `taskschd.msc`)
-   - Create Basic Task
-   - Name: "Baby Monitor Events Backup"
-   - Trigger: Daily at 2:00 AM
-   - Action: Start a program
-   - Program: `C:\Projects\BabyMonitor\backup_events.bat`
-   - Start in: `C:\Projects\BabyMonitor`
+✅ **Zoom disabled** - No pinch-to-zoom  
+✅ **Scroll disabled** - Fixed layout (except in specific views)  
+✅ **Text selection disabled** - No accidental selections  
+✅ **Double-tap zoom disabled**  
+✅ **Pull-to-refresh disabled**  
+✅ **Safari UI hidden** - Full-screen standalone mode  
 
-### Backup Location
+### Enabled
 
-Backups are stored in the `backups/` directory with filenames like:
-- `events_2025-11-20.json`
-- `events_2025-11-21.json`
-- etc.
+✅ **Modal scrolling** - Scroll inside forms  
+✅ **Events list scrolling** - Scroll through history  
+✅ **Timeline scrolling** - Scroll through day timeline  
+✅ **Input fields** - Text selection in forms  
+✅ **Auto-refresh** - Owlet data refreshes every 5 seconds (main view) and 10 seconds (history view)  
+✅ **Smooth animations** - Slide-in animations for new data  
 
-### Optional: Automatic Cleanup
+## Security Notes
 
-To automatically delete backups older than 30 days, uncomment the cleanup lines in `backup_events.sh`:
-```bash
-find "$BACKUP_DIR" -name "events_*.json" -type f -mtime +30 -delete
-```
-
-## Notes
+⚠️ **Important Security Considerations:**
 
 - This is intentionally simple and local‑first
-- Do not expose publicly without adding authentication and validation
-- CORS is open (`Access-Control-Allow-Origin: *`) for local/mobile testing
+- **Do not expose publicly** without adding authentication and validation
+- CORS is open (`Access-Control-Allow-Origin: *`) for local/mobile testing - restrict in production
 - Owlet integration uses unofficial `pyowletapi` library - respect Owlet's terms of service
 - Store `owlet_config.json` securely (contains credentials)
-- Don't commit credentials to version control
+- **Don't commit credentials to version control** - add `owlet_config.json` to `.gitignore`
+- Consider adding authentication if deploying to a public server
+- Validate and sanitize all user inputs in production
 
 ## Roadmap (Nice-to-Have)
 
-- Export (CSV)
-- Simple stats (sleep durations, feeding counts)
-- Optional multi‑device sync with a real backend
-- Weekly/monthly data aggregates
-- Graphical trend analysis
-- Alert pattern detection
+- 📊 Export functionality (CSV, JSON)
+- 📈 Simple statistics dashboard (sleep durations, feeding counts, trends)
+- 🔄 Optional multi‑device sync with a real backend
+- 📅 Weekly/monthly data aggregates
+- 📉 Graphical trend analysis
+- 🚨 Alert pattern detection
+- 🔔 Push notifications for important events
+- 👥 Multi-baby support
+- 📱 Better Android PWA support
+- 🌙 Dark mode
+
+## License
+
+This project is provided as-is for personal use. Use at your own risk.
+
+## Contributing
+
+This is a personal project, but suggestions and improvements are welcome. Please ensure any changes maintain the simplicity and mobile-first approach of the app.

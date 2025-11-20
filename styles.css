@@ -328,6 +328,28 @@ body {
 .events-header h2 {
     font-size: 24px;
     color: var(--text);
+    flex: 1;
+}
+
+.add-event-btn {
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 15px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease;
+    font-size: 20px;
+}
+
+.add-event-btn:active {
+    transform: scale(0.95);
 }
 
 .event-list {
@@ -580,14 +602,49 @@ body {
 }
 
 .timeline {
-    background: var(--white);
-    border-radius: 20px;
-    padding: 15px 0px 0px 0px;
-    box-shadow: var(--shadow);
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
     position: relative;
     overflow: visible;
     min-height: 132px;
-    /*margin: 0 10px;*/
+    margin-bottom: 16px;
+}
+
+.timeline-chart-title {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.timeline-chart-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    margin-bottom: 16px;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
+.timeline-chart-canvas {
+    max-height: 280px;
+}
+
+/* Mobile optimizations for timeline chart */
+@media (max-width: 480px) {
+    .timeline-chart-container {
+        padding: 8px;
+        /* Height 280px is fine on mobile too */
+    }
+    
+    .timeline-chart-title {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
 }
 
 .timeline-horizontal {
@@ -595,6 +652,9 @@ body {
     flex-direction: column;
     position: relative;
     min-width: 100%;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
 }
 
 
@@ -602,7 +662,7 @@ body {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
-    padding: 0 17px;
+    padding: 0 5px;
 }
 
 .hour-tick {
@@ -742,11 +802,9 @@ body {
     position: relative;
     height: 40px;
     background: #f1f5f9;
-    /*border: 2px solid #cbd5e1;*/
-    /*border-radius: 20px;*/
-    margin: 20px 15px;
+    border-radius: 8px;
+    margin: 20px 5px;
     overflow: visible;
-    /*box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);*/
 }
 
 .timeline-click-info {

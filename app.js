@@ -663,6 +663,8 @@
         // Chart instances storage
         let hrChartInstance = null;
         let o2ChartInstance = null;
+        let combinedChartInstance = null;
+        let timelineChartInstance = null;
         
         async function loadAndRenderCharts(dateStr) {
             try {
@@ -1917,6 +1919,11 @@
             });
 
             if (dayEvents.length === 0) {
+                // Destroy chart if it exists
+                if (timelineChartInstance) {
+                    timelineChartInstance.destroy();
+                    timelineChartInstance = null;
+                }
                 timeline.innerHTML = `
                     <div class="no-events-timeline">
                         <div class="icon">📅</div>
@@ -1930,37 +1937,372 @@
                 return;
             }
 
-            // Show legend and stats
-            legend.classList.add('show');
+            // Show stats (legend is handled by chart)
+            // legend.classList.add('show');
             document.getElementById('dailyStats').classList.add('show');
 
-            // Create horizontal timeline structure
-            let timelineHTML = '<div class="timeline-horizontal">';
-            
-            // Hour labels (every 4 hours)
-            timelineHTML += '<div class="timeline-hours-container">';
-            for (let hour = 0; hour <= 23; hour++) {
-                const hourStr = hour % 4 === 0 ? hour.toString().padStart(2, '0') : '';
-                timelineHTML += `<div class="hour-tick">${hourStr}</div>`;
-            }
-            timelineHTML += '</div>';
-            
-            // Timeline track
-            timelineHTML += '<div class="timeline-track" id="timelineTrack">';
-            timelineHTML += '</div>';
-            timelineHTML += '</div>';
-            
-            timeline.innerHTML = timelineHTML;
-
-            // Process and render events
+            // Process events for timeline
             const processedEvents = processEventsForTimeline(dayEvents);
-            renderHorizontalEventBlocks(processedEvents);
             
-            // Timeline track no longer has general click handler - only events are clickable
+            // Create chart container
+            timeline.innerHTML = `
+                <h3 class="timeline-chart-title">Daily Timeline</h3>
+                <div class="timeline-chart-container">
+                    <canvas id="timelineChart" class="timeline-chart-canvas"></canvas>
+                </div>
+            `;
+
+            // Render Chart.js timeline
+            renderTimelineChart(processedEvents, dayStart);
             
             // Calculate and display daily stats
             calculateDailyStats(processedEvents, dayEvents);
             renderDayEventList(dayEvents);
+        }
+
+        function renderTimelineChart(processedEvents, dayStart) {
+            let canvas = document.getElementById('timelineChart');
+            if (!canvas) return;
+
+            // Set fixed height for the container to ensure readable rows
+            const container = canvas.parentElement;
+            container.style.height = '280px'; // Enough for 4-5 rows
+            container.style.marginBottom = '20px';
+
+            const ctx = canvas.getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (timelineChartInstance) {
+                timelineChartInstance.destroy();
+            }
+
+            // Prepare data for Chart.js
+            const chartData = prepareTimelineChartData(processedEvents, dayStart);
+
+            timelineChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 20,
+                            top: 10,
+                            bottom: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                font: { size: 11 },
+                                color: '#64748b'
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#475569',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: true,
+                            callbacks: {
+                                title: function(context) {
+                                    const item = context[0].raw;
+                                    return item.rawEvent ? item.rawEvent.title : '';
+                                },
+                                label: function(context) {
+                                    const item = context.raw;
+                                    if (!item.rawEvent) return '';
+                                    
+                                    const event = item.rawEvent;
+                                    let timeStr;
+                                    
+                                    if (event.type === 'duration') {
+                                        const start = event.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+                                        const end = event.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+                                        timeStr = `${start} - ${end}`;
+                                    } else {
+                                        timeStr = event.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+                                    }
+                                    
+                                    return [timeStr, event.notes || ''];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            min: 0,
+                            max: 24,
+                            ticks: {
+                                stepSize: 3, // Every 3 hours
+                                callback: function(value) {
+                                    return `${String(value).padStart(2, '0')}:00`;
+                                },
+                                font: { size: 10 },
+                                color: '#94a3b8'
+                            },
+                            grid: {
+                                color: '#f1f5f9',
+                                drawBorder: false
+                            },
+                            border: { display: false }
+                        },
+                        y: {
+                            type: 'category',
+                            // Labels will be auto-taken from data labels
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 12, weight: 500 },
+                                color: '#475569'
+                            },
+                            border: { display: false },
+                            stacked: true
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'xy',
+                        intersect: false
+                    },
+                    onClick: function(evt, elements) {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const dataset = timelineChartInstance.data.datasets[element.datasetIndex];
+                            const dataItem = dataset.data[element.index];
+                            
+                            if (dataItem && dataItem.rawEvent) {
+                                const event = dataItem.rawEvent;
+                                let timeStr;
+                                if (event.type === 'duration') {
+                                    timeStr = `${event.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${event.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                                } else {
+                                    timeStr = event.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                }
+                                
+                                // Use existing showEventInfo if available
+                                if (typeof showEventInfo === 'function') {
+                                    showEventInfo(event.title, timeStr, evt.native.clientX, evt.native.clientY);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function prepareTimelineChartData(processedEvents, dayStart) {
+            const sleepData = [];
+            const feedData = [];
+            const diaperData = [];
+            const otherData = [];
+            
+            let totalSleepMinutes = 0;
+            let totalFeedMinutes = 0;
+            let diaperCount = 0;
+            let otherCount = 0;
+
+            processedEvents.forEach(event => {
+                let startHour, endHour;
+                
+                if (event.type === 'duration') {
+                    startHour = event.startTime.getHours() + event.startTime.getMinutes() / 60;
+                    endHour = event.endTime.getHours() + event.endTime.getMinutes() / 60;
+                    
+                    // Handle crossing midnight
+                    if (endHour < startHour) endHour += 24;
+                    
+                    const durationMinutes = Math.round((event.endTime - event.startTime) / (1000 * 60));
+                    
+                    if (event.category === 'sleep') {
+                        totalSleepMinutes += durationMinutes;
+                    } else if (event.category === 'feed') {
+                        totalFeedMinutes += durationMinutes;
+                    } else if (event.category === 'other') {
+                        // For other duration events if any
+                        otherCount++;
+                    }
+                } else {
+                    startHour = event.time.getHours() + event.time.getMinutes() / 60;
+                    endHour = startHour + 0.2; 
+                    
+                    if (event.category === 'diaper') {
+                        diaperCount++;
+                    } else {
+                        otherCount++;
+                    }
+                }
+                
+                // Helper to format category label with stats
+                const formatDuration = (totalMinutes) => {
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    if (hours === 0) return `${minutes}m`;
+                    return `${hours}h ${minutes}m`;
+                };
+
+                // Generate Labels with Stats
+                const sleepLabel = `Sleep (${formatDuration(totalSleepMinutes)})`;
+                const feedLabel = `Feed (${formatDuration(totalFeedMinutes)})`;
+                const diaperLabel = `Diaper (${diaperCount})`;
+                const otherLabel = `Other (${otherCount})`;
+
+                const dataPoint = {
+                    x: [startHour, endHour],
+                    y: '', // Placeholder, will match label
+                    rawEvent: event
+                };
+                
+                if (event.category === 'sleep') {
+                    dataPoint.y = sleepLabel;
+                    sleepData.push(dataPoint);
+                } else if (event.category === 'feed') {
+                    dataPoint.y = feedLabel;
+                    feedData.push(dataPoint);
+                } else if (event.category === 'diaper') {
+                    dataPoint.y = diaperLabel;
+                    diaperData.push(dataPoint);
+                } else {
+                    dataPoint.y = otherLabel;
+                    otherData.push(dataPoint);
+                }
+            });
+            
+            // Recalculate totals fully first to ensure labels are correct for ALL data points
+            // The previous loop did it incrementally which is wrong for the label assignment on early items
+            // Let's do a pre-pass
+            totalSleepMinutes = 0;
+            totalFeedMinutes = 0;
+            diaperCount = 0;
+            otherCount = 0;
+            
+            processedEvents.forEach(event => {
+                if (event.type === 'duration') {
+                    // Handle duration calculations properly, including cross-midnight if needed
+                    // But here we just use the event duration which should be correct
+                    const durationMs = event.endTime - event.startTime;
+                    const durationMinutes = Math.round(durationMs / (1000 * 60));
+                    
+                    if (event.category === 'sleep') totalSleepMinutes += durationMinutes;
+                    else if (event.category === 'feed') totalFeedMinutes += durationMinutes;
+                    else otherCount++;
+                } else {
+                    if (event.category === 'diaper') diaperCount++;
+                    else otherCount++;
+                }
+            });
+            
+            const formatDuration = (totalMinutes) => {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                if (hours === 0) return `${minutes}m`;
+                return `${hours}h ${minutes}m`;
+            };
+
+            const categories = [
+                `Sleep (${formatDuration(totalSleepMinutes)})`,
+                `Feed (${formatDuration(totalFeedMinutes)})`,
+                `Diaper (${diaperCount})`,
+                `Other (${otherCount})`
+            ];
+            
+            // Clear and re-populate data with correct Y labels
+            sleepData.length = 0;
+            feedData.length = 0;
+            diaperData.length = 0;
+            otherData.length = 0;
+            
+            processedEvents.forEach(event => {
+                let startHour, endHour;
+                if (event.type === 'duration') {
+                    startHour = event.startTime.getHours() + event.startTime.getMinutes() / 60;
+                    endHour = event.endTime.getHours() + event.endTime.getMinutes() / 60;
+                    if (endHour < startHour) endHour += 24;
+                } else {
+                    startHour = event.time.getHours() + event.time.getMinutes() / 60;
+                    endHour = startHour + 0.2;
+                }
+                
+                const dataPoint = {
+                    x: [startHour, endHour],
+                    y: '', 
+                    rawEvent: event
+                };
+                
+                if (event.category === 'sleep') {
+                    dataPoint.y = categories[0];
+                    sleepData.push(dataPoint);
+                } else if (event.category === 'feed') {
+                    dataPoint.y = categories[1];
+                    feedData.push(dataPoint);
+                } else if (event.category === 'diaper') {
+                    dataPoint.y = categories[2];
+                    diaperData.push(dataPoint);
+                } else {
+                    dataPoint.y = categories[3];
+                    otherData.push(dataPoint);
+                }
+            });
+
+            return {
+                labels: categories,
+                datasets: [
+                    {
+                        label: 'Sleep',
+                        data: sleepData,
+                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                        borderColor: 'rgba(139, 92, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Feed',
+                        data: feedData,
+                        backgroundColor: 'rgba(236, 72, 153, 0.8)',
+                        borderColor: 'rgba(236, 72, 153, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Diaper',
+                        data: diaperData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Other',
+                        data: otherData,
+                        backgroundColor: 'rgba(251, 191, 36, 0.8)',
+                        borderColor: 'rgba(251, 191, 36, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            };
         }
 
         function processEventsForTimeline(dayEvents) {
