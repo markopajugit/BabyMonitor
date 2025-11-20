@@ -13,6 +13,7 @@ The app is designed to be added to an iOS home screen and used like a lightweigh
 - ✅ **Day Timeline View** - Visual timeline showing sleep and feed periods with daily statistics
 - ✅ **Milestones View** - Dedicated view for tracking baby's special moments
 - ✅ **Owlet Integration** - Real-time vital monitoring (heart rate, oxygen level, movement) with historical charts
+- ✅ **Long Feed Alerts** - PWA notifications when a feeding session exceeds 1 hour
 - ✅ **PWA Support** - Install as a standalone app on iOS/Android
 - ✅ **Offline-First** - Works locally, no internet required for basic event tracking
 
@@ -816,6 +817,32 @@ Check `backup_events.log` for backup activity and any errors.
 ✅ **Input fields** - Text selection in forms  
 ✅ **Auto-refresh** - Owlet data refreshes every 5 seconds (main view) and 10 seconds (history view)  
 ✅ **Smooth animations** - Slide-in animations for new data  
+
+### Long Feed Notifications (PWA)
+
+The app includes automatic notifications to alert you when a feeding session has lasted longer than 1 hour without an end event.
+
+#### How It Works
+
+1. **Automatic Permission Request** - On first load, the app requests notification permissions from your device
+2. **Background Monitoring** - After you grant permission, the app continuously monitors for active feeds
+3. **Smart Alerting** - When a "Feed Start" event has been active for more than 1 hour without a corresponding "Feed End", you'll receive a notification
+4. **Checks Every 5 Minutes** - The app checks feed duration every 5 minutes to minimize performance impact
+5. **One Notification Per Feed** - Only one notification per feed session, even if the feed continues beyond the threshold
+
+#### Notification Features
+
+- **Clear Alert** - Shows how long the feeding session has been active
+- **Interactive Actions** - Tap to open the app and view the timeline
+- **iPhone Support** - Notifications work when the PWA is added to home screen or running in Safari
+- **Service Worker Integration** - Uses PWA service worker for reliable background notifications
+
+#### Enabling Notifications
+
+- **First Load**: Allow notification permission when prompted
+- **Already Denied?**: You can re-enable notifications in:
+  - **iOS**: Settings > Safari > Notifications (for PWA)
+  - **Android**: Settings > Notifications > Baby Monitor
 
 ## Security Notes
 

@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json?v=1.4">
+    <link rel="manifest" href="manifest.json?v=1.7">
     
     <!-- Feather Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
@@ -35,6 +35,23 @@
     
     <title>Baby Monitor</title>
     <link rel="stylesheet" href="styles.css?v=1.7">
+    
+    <!-- Register Service Worker for PWA Notifications -->
+    <script>
+        // Register service worker on page load
+        window.addEventListener('load', () => {
+            if ('serviceWorker' in navigator) {
+                const appVersion = '1.7';
+                navigator.serviceWorker.register('service-worker.js?v=' + appVersion)
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
+        });
+    </script>
 </head>
 <body>
     <!-- Main Grid -->
@@ -329,6 +346,6 @@
 
     <!-- Chart.js for HR and O2 charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="app.js?v=1.6"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>
