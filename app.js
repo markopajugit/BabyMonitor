@@ -666,21 +666,44 @@
         
         async function loadAndRenderCharts(dateStr) {
             try {
+                // Destroy existing charts first
+                if (hrChartInstance) {
+                    hrChartInstance.destroy();
+                    hrChartInstance = null;
+                }
+                if (o2ChartInstance) {
+                    o2ChartInstance.destroy();
+                    o2ChartInstance = null;
+                }
+                
                 // Fetch minute-by-minute data for the selected date
                 const response = await fetch(`events.php?minutes=true&date=${dateStr}`);
                 if (!response.ok) {
                     console.warn('Failed to fetch minute data for charts');
+                    showChartError('hrChart', 'Failed to load chart data');
+                    showChartError('o2Chart', 'Failed to load chart data');
                     return;
                 }
                 
                 const data = await response.json();
-                if (!data.minutes || data.minutes.length === 0) {
-                    console.warn('No minute data available for charts');
+                
+                // Check for error response
+                if (data.error) {
+                    console.warn('Chart data error:', data.error);
+                    showChartError('hrChart', data.error);
+                    showChartError('o2Chart', data.error);
                     return;
                 }
                 
-                // Process minute data for charts
-                const chartData = processMinuteDataForCharts(data.minutes);
+                if (!data.minutes || data.minutes.length === 0) {
+                    console.warn('No minute data available for charts');
+                    showChartError('hrChart', 'No minute data available for this date');
+                    showChartError('o2Chart', 'No minute data available for this date');
+                    return;
+                }
+                
+                // Process minute data for charts - create full 24h range
+                const chartData = processMinuteDataForCharts(data.minutes, dateStr);
                 
                 // Render HR chart
                 renderHRChart(chartData);
@@ -689,51 +712,103 @@
                 renderO2Chart(chartData);
             } catch (error) {
                 console.error('Error loading chart data:', error);
+                showChartError('hrChart', 'Error loading chart data');
+                showChartError('o2Chart', 'Error loading chart data');
             }
         }
         
-        function processMinuteDataForCharts(minutes) {
+        function showChartError(chartId, errorMessage) {
+            let container = null;
+            
+            // Try to find container via canvas element first
+            const canvas = document.getElementById(chartId);
+            if (canvas && canvas.parentElement) {
+                container = canvas.parentElement;
+            } else {
+                // If canvas doesn't exist, find container by position in charts section
+                const containers = document.querySelectorAll('.history-chart-container');
+                if (chartId === 'hrChart' && containers.length >= 1) {
+                    container = containers[0];
+                } else if (chartId === 'o2Chart' && containers.length >= 2) {
+                    container = containers[1];
+                }
+            }
+            
+            if (!container) return;
+            
+            // Clear the container and show error message
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #64748b; text-align: center; padding: 20px;">
+                    <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+                    <div style="font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 4px;">${errorMessage}</div>
+                </div>
+            `;
+        }
+        
+        function processMinuteDataForCharts(minutes, dateStr) {
             const labels = [];
             const hrData = [];
             const o2Data = [];
             const timestamps = []; // Store full timestamps for tooltips
             
-            // Determine label frequency based on data length
-            // For a full day (1440 minutes), show labels every 2 hours
-            // For shorter periods, show labels more frequently
-            const totalMinutes = minutes.length;
-            let labelInterval = 120; // Default: every 2 hours (120 minutes)
-            if (totalMinutes < 720) {
-                labelInterval = 60; // Every hour if less than 12 hours
-            }
-            if (totalMinutes < 360) {
-                labelInterval = 30; // Every 30 minutes if less than 6 hours
-            }
-            
-            minutes.forEach((minute, index) => {
+            // Create a map of existing data by minute index (0-1439 for 24 hours)
+            const dataMap = new Map();
+            minutes.forEach((minute) => {
                 const timestamp = new Date(minute.timestamp);
-                // Format time as HH:MM for display
-                const timeLabel = `${String(timestamp.getHours()).padStart(2, '0')}:${String(timestamp.getMinutes()).padStart(2, '0')}`;
+                const hour = timestamp.getHours();
+                const minuteOfHour = timestamp.getMinutes();
+                const minuteIndex = hour * 60 + minuteOfHour; // 0-1439
+                dataMap.set(minuteIndex, {
+                    hr: minute.heart_rate_avg !== null && minute.heart_rate_avg !== undefined ? minute.heart_rate_avg : null,
+                    o2: minute.oxygen_saturation_avg !== null && minute.oxygen_saturation_avg !== undefined ? minute.oxygen_saturation_avg : null,
+                    timestamp: timestamp
+                });
+            });
+            
+            // Create full 24-hour range (1440 minutes)
+            const baseDate = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+            baseDate.setHours(0, 0, 0, 0);
+            
+            for (let minuteIndex = 0; minuteIndex < 1440; minuteIndex++) {
+                const hour = Math.floor(minuteIndex / 60);
+                const minuteOfHour = minuteIndex % 60;
                 
-                // Show label at start, end, and at regular intervals
-                if (index === 0 || index === minutes.length - 1 || index % labelInterval === 0) {
-                    labels.push(timeLabel);
-                } else {
-                    labels.push('');
-                }
+                // Create timestamp for this minute
+                const timestamp = new Date(baseDate);
+                timestamp.setHours(hour, minuteOfHour, 0, 0);
                 
-                // Store full timestamp for tooltip
+                // Format time label
+                const timeLabel = `${String(hour).padStart(2, '0')}:${String(minuteOfHour).padStart(2, '0')}`;
+                labels.push(timeLabel);
                 timestamps.push(timestamp);
                 
-                hrData.push(minute.heart_rate_avg !== null && minute.heart_rate_avg !== undefined ? minute.heart_rate_avg : null);
-                o2Data.push(minute.oxygen_saturation_avg !== null && minute.oxygen_saturation_avg !== undefined ? minute.oxygen_saturation_avg : null);
-            });
+                // Get data from map or use 0 for missing data
+                const dataPoint = dataMap.get(minuteIndex);
+                if (dataPoint) {
+                    hrData.push(dataPoint.hr !== null && dataPoint.hr !== undefined ? dataPoint.hr : 0);
+                    o2Data.push(dataPoint.o2 !== null && dataPoint.o2 !== undefined ? dataPoint.o2 : 0);
+                } else {
+                    hrData.push(0);
+                    o2Data.push(0);
+                }
+            }
             
             return { labels, hrData, o2Data, timestamps };
         }
         
         function renderHRChart(chartData) {
-            const canvas = document.getElementById('hrChart');
+            let canvas = document.getElementById('hrChart');
+            
+            // If canvas doesn't exist (was replaced by error message), restore it
+            if (!canvas) {
+                // Find the container by looking for the one that should contain hrChart
+                const containers = document.querySelectorAll('.history-chart-container');
+                if (containers.length >= 1) {
+                    containers[0].innerHTML = '<canvas id="hrChart" class="history-chart"></canvas>';
+                    canvas = document.getElementById('hrChart');
+                }
+            }
+            
             if (!canvas) return;
             
             const ctx = canvas.getContext('2d');
@@ -743,8 +818,26 @@
                 hrChartInstance.destroy();
             }
             
-            // Store timestamps for tooltip access
+            // Store timestamps and labels for tooltip access
             const timestamps = chartData.timestamps;
+            const labels = chartData.labels;
+            
+            // Pre-calculate all 24 full hours (00:00 to 23:00)
+            const fullHours = [];
+            if (timestamps.length > 0) {
+                const baseDate = new Date(timestamps[0]);
+                baseDate.setHours(0, 0, 0, 0);
+                
+                // Generate all 24 hours
+                for (let hour = 0; hour < 24; hour++) {
+                    const hourDate = new Date(baseDate);
+                    hourDate.setHours(hour, 0, 0, 0);
+                    fullHours.push(hourDate);
+                }
+            }
+            
+            const firstTimestamp = timestamps.length > 0 ? timestamps[0] : null;
+            const lastTimestamp = timestamps.length > 0 ? timestamps[timestamps.length - 1] : null;
             
             hrChartInstance = new Chart(ctx, {
                 type: 'line',
@@ -760,7 +853,7 @@
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        spanGaps: true
+                        spanGaps: false
                     }]
                 },
                 options: {
@@ -815,7 +908,44 @@
                                     size: 10
                                 },
                                 color: '#64748b',
-                                maxTicksLimit: 12
+                                maxTicksLimit: 24,
+                                callback: function(value, index, ticks) {
+                                    if (timestamps.length === 0) {
+                                        return '';
+                                    }
+                                    
+                                    // Get the label value - value might be index or string
+                                    let labelValue = '';
+                                    if (typeof value === 'string') {
+                                        labelValue = value;
+                                    } else if (typeof value === 'number' && index >= 0 && index < labels.length) {
+                                        labelValue = labels[index];
+                                    } else if (value !== null && value !== undefined) {
+                                        labelValue = String(value);
+                                    } else {
+                                        return '';
+                                    }
+                                    
+                                    if (!labelValue || labelValue === '') {
+                                        return '';
+                                    }
+                                    
+                                    // Parse HH:MM from label value
+                                    const timeMatch = labelValue.match(/(\d{2}):(\d{2})/);
+                                    if (!timeMatch) {
+                                        return '';
+                                    }
+                                    
+                                    const labelMinutes = parseInt(timeMatch[2], 10);
+                                    
+                                    // Only show labels at full hours (minutes === 00)
+                                    if (labelMinutes === 0) {
+                                        const labelHours = parseInt(timeMatch[1], 10);
+                                        return `${String(labelHours).padStart(2, '0')}:00`;
+                                    }
+                                    
+                                    return '';
+                                }
                             }
                         },
                         y: {
@@ -843,7 +973,18 @@
         }
         
         function renderO2Chart(chartData) {
-            const canvas = document.getElementById('o2Chart');
+            let canvas = document.getElementById('o2Chart');
+            
+            // If canvas doesn't exist (was replaced by error message), restore it
+            if (!canvas) {
+                // Find the container by looking for the one that should contain o2Chart
+                const containers = document.querySelectorAll('.history-chart-container');
+                if (containers.length >= 2) {
+                    containers[1].innerHTML = '<canvas id="o2Chart" class="history-chart"></canvas>';
+                    canvas = document.getElementById('o2Chart');
+                }
+            }
+            
             if (!canvas) return;
             
             const ctx = canvas.getContext('2d');
@@ -853,8 +994,35 @@
                 o2ChartInstance.destroy();
             }
             
-            // Store timestamps for tooltip access
+            // Store timestamps and labels for tooltip access
             const timestamps = chartData.timestamps;
+            const labels = chartData.labels;
+            
+            // Pre-calculate all full hours in the data range
+            const firstTimestamp = timestamps.length > 0 ? timestamps[0] : null;
+            const lastTimestamp = timestamps.length > 0 ? timestamps[timestamps.length - 1] : null;
+            const fullHours = [];
+            
+            if (firstTimestamp && lastTimestamp) {
+                // Get the first full hour (round up if needed)
+                const startHour = new Date(firstTimestamp);
+                startHour.setMinutes(0);
+                startHour.setSeconds(0);
+                startHour.setMilliseconds(0);
+                
+                // Get the last full hour (round down if needed)
+                const endHour = new Date(lastTimestamp);
+                endHour.setMinutes(0);
+                endHour.setSeconds(0);
+                endHour.setMilliseconds(0);
+                
+                // Generate all full hours in range
+                let currentHour = new Date(startHour);
+                while (currentHour <= endHour) {
+                    fullHours.push(new Date(currentHour));
+                    currentHour.setHours(currentHour.getHours() + 1);
+                }
+            }
             
             o2ChartInstance = new Chart(ctx, {
                 type: 'line',
@@ -870,7 +1038,7 @@
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        spanGaps: true
+                        spanGaps: false
                     }]
                 },
                 options: {
@@ -925,7 +1093,44 @@
                                     size: 10
                                 },
                                 color: '#64748b',
-                                maxTicksLimit: 12
+                                maxTicksLimit: 24,
+                                callback: function(value, index, ticks) {
+                                    if (timestamps.length === 0) {
+                                        return '';
+                                    }
+                                    
+                                    // Get the label value - value might be index or string
+                                    let labelValue = '';
+                                    if (typeof value === 'string') {
+                                        labelValue = value;
+                                    } else if (typeof value === 'number' && index >= 0 && index < labels.length) {
+                                        labelValue = labels[index];
+                                    } else if (value !== null && value !== undefined) {
+                                        labelValue = String(value);
+                                    } else {
+                                        return '';
+                                    }
+                                    
+                                    if (!labelValue || labelValue === '') {
+                                        return '';
+                                    }
+                                    
+                                    // Parse HH:MM from label value
+                                    const timeMatch = labelValue.match(/(\d{2}):(\d{2})/);
+                                    if (!timeMatch) {
+                                        return '';
+                                    }
+                                    
+                                    const labelMinutes = parseInt(timeMatch[2], 10);
+                                    
+                                    // Only show labels at full hours (minutes === 00)
+                                    if (labelMinutes === 0) {
+                                        const labelHours = parseInt(timeMatch[1], 10);
+                                        return `${String(labelHours).padStart(2, '0')}:00`;
+                                    }
+                                    
+                                    return '';
+                                }
                             }
                         },
                         y: {
