@@ -1813,7 +1813,7 @@
                         if (hrs.length > 0) {
                             aggregated.heart_rate = {
                                 avg: hrs.reduce((a, b) => a + b, 0) / hrs.length,
-                                min: Math.min(...hourlyData.map(h => h.heart_rate?.min).filter(x => x !== null && x !== undefined)),
+                                min: Math.min(...hourlyData.map(h => h.heart_rate?.min).filter(x => x !== null && x !== undefined && x > 0)),
                                 max: Math.max(...hourlyData.map(h => h.heart_rate?.max).filter(x => x !== null && x !== undefined))
                             };
                         }
@@ -1821,7 +1821,7 @@
                         if (o2s.length > 0) {
                             aggregated.oxygen_saturation = {
                                 avg: o2s.reduce((a, b) => a + b, 0) / o2s.length,
-                                min: Math.min(...hourlyData.map(h => h.oxygen_saturation?.min).filter(x => x !== null && x !== undefined)),
+                                min: Math.min(...hourlyData.map(h => h.oxygen_saturation?.min).filter(x => x !== null && x !== undefined && x > 0)),
                                 max: Math.max(...hourlyData.map(h => h.oxygen_saturation?.max).filter(x => x !== null && x !== undefined))
                             };
                         }
