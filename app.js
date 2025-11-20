@@ -696,6 +696,7 @@
             const labels = [];
             const hrData = [];
             const o2Data = [];
+            const timestamps = []; // Store full timestamps for tooltips
             
             // Determine label frequency based on data length
             // For a full day (1440 minutes), show labels every 2 hours
@@ -721,11 +722,14 @@
                     labels.push('');
                 }
                 
+                // Store full timestamp for tooltip
+                timestamps.push(timestamp);
+                
                 hrData.push(minute.heart_rate_avg !== null && minute.heart_rate_avg !== undefined ? minute.heart_rate_avg : null);
                 o2Data.push(minute.oxygen_saturation_avg !== null && minute.oxygen_saturation_avg !== undefined ? minute.oxygen_saturation_avg : null);
             });
             
-            return { labels, hrData, o2Data };
+            return { labels, hrData, o2Data, timestamps };
         }
         
         function renderHRChart(chartData) {
@@ -738,6 +742,9 @@
             if (hrChartInstance) {
                 hrChartInstance.destroy();
             }
+            
+            // Store timestamps for tooltip access
+            const timestamps = chartData.timestamps;
             
             hrChartInstance = new Chart(ctx, {
                 type: 'line',
@@ -780,6 +787,18 @@
                             },
                             bodyFont: {
                                 size: 11
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    const timestamp = timestamps[index];
+                                    if (timestamp) {
+                                        const hours = String(timestamp.getHours()).padStart(2, '0');
+                                        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                                        return `${hours}:${minutes}`;
+                                    }
+                                    return context[0].label || '';
+                                }
                             }
                         }
                     },
@@ -802,12 +821,7 @@
                         y: {
                             display: true,
                             title: {
-                                display: true,
-                                text: 'Heart Rate (bpm)',
-                                font: {
-                                    size: 11
-                                },
-                                color: '#64748b'
+                                display: false
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.05)'
@@ -838,6 +852,9 @@
             if (o2ChartInstance) {
                 o2ChartInstance.destroy();
             }
+            
+            // Store timestamps for tooltip access
+            const timestamps = chartData.timestamps;
             
             o2ChartInstance = new Chart(ctx, {
                 type: 'line',
@@ -880,6 +897,18 @@
                             },
                             bodyFont: {
                                 size: 11
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    const timestamp = timestamps[index];
+                                    if (timestamp) {
+                                        const hours = String(timestamp.getHours()).padStart(2, '0');
+                                        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+                                        return `${hours}:${minutes}`;
+                                    }
+                                    return context[0].label || '';
+                                }
                             }
                         }
                     },
@@ -902,12 +931,7 @@
                         y: {
                             display: true,
                             title: {
-                                display: true,
-                                text: 'Oxygen (%)',
-                                font: {
-                                    size: 11
-                                },
-                                color: '#64748b'
+                                display: false
                             },
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.05)'
