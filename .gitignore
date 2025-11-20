@@ -15,6 +15,9 @@ owlet_daily_summaries/
 # Events database
 events.json
 
+# Backups
+backups/
+
 # Logs
 *.log
 owlet_sync.log

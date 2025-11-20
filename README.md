@@ -347,6 +347,101 @@ Returns daily summaries for the past 30 days with hourly granularity from `owlet
 ✅ Events list scrolling - Scroll through history  
 ✅ Input fields - Text selection in forms  
 
+## Daily Backup (Production)
+
+The app includes a daily backup script for `events.json` to prevent data loss.
+
+### Linux/Mac (Production)
+
+1. Make the backup script executable:
+```bash
+chmod +x backup_events.sh
+```
+
+2. Test the script manually:
+```bash
+./backup_events.sh
+```
+
+3. Set up a daily cron job (runs at 2 AM):
+```bash
+crontab -e
+```
+
+Add this line:
+```bash
+0 2 * * * /path/to/BabyMonitor/backup_events.sh >> /path/to/BabyMonitor/backup.log 2>&1
+```
+
+Replace `/path/to/BabyMonitor` with your actual project path (e.g., `/var/www/BabyMonitor`).
+
+**Alternative: Using systemd timer (recommended for systemd-based systems)**
+
+Create `/etc/systemd/system/events-backup.service`:
+```ini
+[Unit]
+Description=Daily backup of events.json
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+WorkingDirectory=/var/www/BabyMonitor
+ExecStart=/var/www/BabyMonitor/backup_events.sh
+```
+
+Create `/etc/systemd/system/events-backup.timer`:
+```ini
+[Unit]
+Description=Daily backup timer for events.json
+Requires=events-backup.service
+
+[Timer]
+OnCalendar=daily
+OnCalendar=02:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Then enable and start:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable events-backup.timer
+sudo systemctl start events-backup.timer
+```
+
+### Windows (Development/Testing)
+
+1. Test the script manually:
+```cmd
+backup_events.bat
+```
+
+2. Set up Task Scheduler:
+   - Open Task Scheduler (Win + R, type `taskschd.msc`)
+   - Create Basic Task
+   - Name: "Baby Monitor Events Backup"
+   - Trigger: Daily at 2:00 AM
+   - Action: Start a program
+   - Program: `C:\Projects\BabyMonitor\backup_events.bat`
+   - Start in: `C:\Projects\BabyMonitor`
+
+### Backup Location
+
+Backups are stored in the `backups/` directory with filenames like:
+- `events_2025-11-20.json`
+- `events_2025-11-21.json`
+- etc.
+
+### Optional: Automatic Cleanup
+
+To automatically delete backups older than 30 days, uncomment the cleanup lines in `backup_events.sh`:
+```bash
+find "$BACKUP_DIR" -name "events_*.json" -type f -mtime +30 -delete
+```
+
 ## Notes
 
 - This is intentionally simple and local‑first
