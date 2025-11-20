@@ -1,5 +1,21 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.4';
+        const APP_VERSION = '1.6';
+
+        const ICONS = {
+            'Feed': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/></svg>',
+            'Feed Start': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/><line x1="12" y1="11" x2="12" y2="16"/></svg>',
+            'Feed End': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5h-6zM9 7v14a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V7H9z"/><path d="m16 16-4-4-4 4"/></svg>',
+            'Sleep': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+            'Sleep Start': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+            'Sleep End': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+            'Diaper': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M4.5 12v6a3.5 3.5 0 0 0 7 0"/><path d="M12.5 18a3.5 3.5 0 0 0 7 0v-6"/></svg>',
+            'Medicine': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8h8"/><path d="M12 4v16"/><rect width="16" height="16" x="4" y="4" rx="2"/></svg>',
+            'Bath': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12A5 5 0 1 1 19 12"/><path d="M3 16v-2a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2"/><path d="M4 16h16"/><path d="M4 16v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>',
+            'Doctor': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+            'Milestone': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+            'Other': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+            'default': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>'
+        };
         
         // Initialize events array
         let events = [];
@@ -39,11 +55,14 @@
         }
 
         // Quick event (one-tap)
-        function quickEvent(type, icon) {
+        function quickEvent(type, iconKey) {
+            // iconKey is now the key in ICONS, e.g. 'Feed Start'
+            const iconSvg = ICONS[iconKey] || ICONS['default'];
+            
             const event = {
                 id: Date.now(),
                 type: type,
-                icon: icon,
+                icon: type, // We store the type as the icon for simplicity, or just ignore it
                 time: new Date().toISOString(),
                 notes: ''
             };
@@ -57,7 +76,7 @@
             
             saveEvent(event).then(success => {
                 if (success) {
-                    showToast(`${icon} ${type} recorded!`);
+                    showToast(`<span style="display:inline-flex;vertical-align:middle;margin-right:8px;width:20px;height:20px">${iconSvg}</span> ${type} recorded!`);
                 }
             });
         }
@@ -71,25 +90,12 @@
             const notes = document.getElementById('eventNotes').value;
             const editingId = this.dataset.editingId;
             
-            const iconMap = {
-                'Feed': '🍼',
-                'Sleep': '😴',
-                'Diaper': '🩱',
-                'Medicine': '💊',
-                'Bath': '🛁',
-                'Doctor': '👨‍⚕️',
-                'Milestone': '⭐',
-                'Other': '📝',
-                'Feed Start': '🍼',
-                'Feed End': '🍼',
-                'Sleep Start': '😴',
-                'Sleep End': '😴'
-            };
+            const iconSvg = ICONS[type] || ICONS['default'];
             
             const event = {
                 id: editingId ? parseInt(editingId) : Date.now(),
                 type: type,
-                icon: iconMap[type],
+                icon: type,
                 time: new Date(time).toISOString(),
                 notes: notes
             };
@@ -98,7 +104,7 @@
                 if (success) {
                     closeModal();
                     const action = editingId ? 'updated' : 'recorded';
-                    showToast(`${iconMap[type]} ${type} ${action}!`);
+                    showToast(`<span style="display:inline-flex;vertical-align:middle;margin-right:8px;width:20px;height:20px">${iconSvg}</span> ${type} ${action}!`);
                     
                     // Refresh the current view
                     if (document.getElementById('eventsView').classList.contains('active')) {
@@ -282,19 +288,24 @@
             if (!view) return;
             
             view.addEventListener('touchstart', (e) => {
-                owletTouchStartX = e.touches[0].clientX;
-                owletTouchStartY = e.touches[0].clientY;
+                if (e.touches.length === 1) {
+                    owletTouchStartX = e.touches[0].clientX;
+                    owletTouchStartY = e.touches[0].clientY;
+                }
             }, false);
             
             view.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length === 0) return;
+                
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
                 
                 const diffX = touchEndX - owletTouchStartX;
                 const diffY = touchEndY - owletTouchStartY;
                 
-                // Swipe right with minimal vertical movement
+                // Swipe to go back: right swipe with minimal vertical movement
                 if (diffX > 100 && Math.abs(diffY) < 50) {
+                    e.preventDefault();
                     closeOwletView();
                 }
             }, false);
@@ -417,6 +428,10 @@
                     ? latest_reading.oxygen_10_av + '%'
                     : 'N/A';
                 
+                // Validate O2 average is between 0 and 100
+                const isO2AverageInvalid = latest_reading.oxygen_10_av !== null && latest_reading.oxygen_10_av !== undefined 
+                    && (latest_reading.oxygen_10_av < 0 || latest_reading.oxygen_10_av > 100);
+                
                 // Check if container exists for first-time render
                 if (!document.getElementById('owletVitalsContainer')) {
                     statusDiv.innerHTML = `
@@ -482,8 +497,9 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                 <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
                                     <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m)</div>
-                                    <div id="owletO2AvgValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                    <div id="owletO2AvgValue" style="font-size: 20px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
                                         ${o2AverageDisplay}
+                                        ${isO2AverageInvalid ? '<span id="o2AvgInvalidIcon" style="cursor: pointer; font-size: 18px; color: #ef4444;">?</span>' : ''}
                                     </div>
                                 </div>
                                 
@@ -558,6 +574,14 @@
                     if (latest_reading.high_heart_rate === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>';
                     if (latest_reading.low_battery === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>';
                     alertsDiv.innerHTML = alertsHTML;
+                }
+                
+                // Add click handler for O2 Average invalid icon
+                const o2AvgInvalidIcon = document.getElementById('o2AvgInvalidIcon');
+                if (o2AvgInvalidIcon) {
+                    o2AvgInvalidIcon.addEventListener('click', () => {
+                        alert('owletist tuleb mingi pask');
+                    });
                 }
             } catch (error) {
                 console.error('Error loading Owlet data:', error);
@@ -642,19 +666,24 @@
             if (!view) return;
             
             view.addEventListener('touchstart', (e) => {
-                historyTouchStartX = e.touches[0].clientX;
-                historyTouchStartY = e.touches[0].clientY;
+                if (e.touches.length === 1) {
+                    historyTouchStartX = e.touches[0].clientX;
+                    historyTouchStartY = e.touches[0].clientY;
+                }
             }, false);
             
             view.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length === 0) return;
+                
                 const touchEndX = e.changedTouches[0].clientX;
                 const touchEndY = e.changedTouches[0].clientY;
                 
                 const diffX = touchEndX - historyTouchStartX;
                 const diffY = touchEndY - historyTouchStartY;
                 
-                // Swipe right with minimal vertical movement
+                // Swipe to go back: right swipe with minimal vertical movement
                 if (diffX > 100 && Math.abs(diffY) < 50) {
+                    e.preventDefault();
                     closeOwletHistoryView();
                 }
             }, false);
@@ -1608,9 +1637,6 @@
                             <div class="history-chart-container">
                                 <canvas id="o2Chart" class="history-chart"></canvas>
                             </div>
-                            <div class="history-chart-container">
-                                <canvas id="combinedChart" class="history-chart"></canvas>
-                            </div>
                         </div>
                         
                         <div class="history-hourly-section">
@@ -1668,7 +1694,7 @@
             if (events.length === 0) {
                 eventList.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">📭</div>
+                        <div class="icon">${ICONS['default']}</div>
                         <h3>No events yet</h3>
                         <p>Start tracking your baby's activities</p>
                     </div>
@@ -1686,12 +1712,18 @@
                     hour12: false
                 });
                 
-                const typeClass = event.type.toLowerCase();
+                let typeClass = 'custom';
+                if (event.type.includes('Feed')) typeClass = 'feed';
+                else if (event.type.includes('Sleep')) typeClass = 'sleep';
+                else if (event.type.includes('Diaper')) typeClass = 'diaper';
+                else if (event.type.includes('Milestone')) typeClass = 'milestone';
+                
+                const iconSvg = ICONS[event.type] || ICONS['default'];
                 
                 return `
                     <div class="event-item">
                         <div class="event-icon ${typeClass}">
-                            ${event.icon}
+                            ${iconSvg}
                         </div>
                         <div class="event-details">
                             <div class="event-type">${event.type}</div>
@@ -1726,7 +1758,7 @@
                     
                     boxes.push(`
                         <div class="milestone-box" onclick="editEvent(${milestone.id})">
-                            <div class="milestone-icon">${milestone.icon}</div>
+                            <div class="milestone-icon">${ICONS['Milestone']}</div>
                             <div class="milestone-title">${milestone.notes || milestone.type}</div>
                             <div class="milestone-date">${dateStr}</div>
                         </div>
@@ -1734,7 +1766,7 @@
                 } else {
                     boxes.push(`
                         <div class="milestone-box empty" onclick="openModal(); document.getElementById('eventType').value = 'Milestone';">
-                            <div class="milestone-icon">➕</div>
+                            <div class="milestone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></div>
                             <div class="milestone-title">Add Milestone</div>
                         </div>
                     `);
@@ -1744,7 +1776,7 @@
             if (milestones.length === 0) {
                 milestonesGrid.innerHTML = `
                     <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="icon">⭐</div>
+                        <div class="icon">${ICONS['Milestone']}</div>
                         <h3>No milestones yet</h3>
                         <p>Record your baby's special moments</p>
                     </div>
@@ -1784,7 +1816,7 @@
         // Show toast notification
         function showToast(message) {
             const toast = document.getElementById('toast');
-            toast.textContent = message;
+            toast.innerHTML = message;
             toast.classList.add('show');
             
             setTimeout(() => {
@@ -1833,10 +1865,14 @@
             const eventsView = document.getElementById('eventsView');
             const milestonesView = document.getElementById('milestonesView');
             const dayTimelineView = document.getElementById('dayTimelineView');
+            const owletView = document.getElementById('owletView');
+            const owletHistoryView = document.getElementById('owletHistoryView');
             
             const isViewActive = (eventsView && eventsView.classList.contains('active')) ||
                                  (milestonesView && milestonesView.classList.contains('active')) ||
-                                 (dayTimelineView && dayTimelineView.classList.contains('active'));
+                                 (dayTimelineView && dayTimelineView.classList.contains('active')) ||
+                                 (owletView && owletView.classList.contains('active')) ||
+                                 (owletHistoryView && owletHistoryView.classList.contains('active'));
             
             if (isViewActive && e.touches.length === 1) {
                 touchStartX = e.touches[0].clientX;
@@ -1845,19 +1881,25 @@
         }, false);
 
         document.addEventListener('touchend', function(e) {
+            // Make sure we have valid touch data
+            if (e.changedTouches.length === 0) return;
+            
             touchEndX = e.changedTouches[0].clientX;
             touchEndY = e.changedTouches[0].clientY;
             
             const horizontalDistance = touchEndX - touchStartX;
             const verticalDistance = Math.abs(touchEndY - touchStartY);
             
-            // Threshold for swipe detection: 100px horizontal movement with less vertical movement
+            // Threshold for swipe detection: 100px horizontal movement (right to left, i.e., positive X distance)
+            // with less than 50px vertical movement
             if (horizontalDistance > 100 && verticalDistance < 50) {
                 const eventsView = document.getElementById('eventsView');
                 const milestonesView = document.getElementById('milestonesView');
                 const dayTimelineView = document.getElementById('dayTimelineView');
+                const owletView = document.getElementById('owletView');
+                const owletHistoryView = document.getElementById('owletHistoryView');
                 
-                // Right-to-left swipe (positive X movement)
+                // Swipe to go back: right swipe (positive X movement)
                 if (eventsView && eventsView.classList.contains('active')) {
                     e.preventDefault();
                     closeEventsView();
@@ -1867,6 +1909,12 @@
                 } else if (dayTimelineView && dayTimelineView.classList.contains('active')) {
                     e.preventDefault();
                     closeDayTimelineView();
+                } else if (owletView && owletView.classList.contains('active')) {
+                    e.preventDefault();
+                    closeOwletView();
+                } else if (owletHistoryView && owletHistoryView.classList.contains('active')) {
+                    e.preventDefault();
+                    closeOwletHistoryView();
                 }
             }
         }, false);
@@ -2260,11 +2308,12 @@
                 datasets.push({
                     label: 'Sleep',
                     data: sleepData,
-                    backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                    borderColor: 'rgba(139, 92, 246, 1)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
                     borderWidth: 1,
-                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                    barPercentage: 0.7,
+                    borderSkipped: false,
+                    borderRadius: 1,
+                    barPercentage: 0.6,
                     categoryPercentage: 0.8
                 });
             }
@@ -2274,11 +2323,12 @@
                 datasets.push({
                     label: 'Feed',
                     data: feedData,
-                    backgroundColor: 'rgba(236, 72, 153, 0.8)',
-                    borderColor: 'rgba(236, 72, 153, 1)',
+                    backgroundColor: 'rgba(244, 114, 182, 0.7)',
+                    borderColor: 'rgba(244, 114, 182, 1)',
                     borderWidth: 1,
-                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                    barPercentage: 0.7,
+                    borderSkipped: false,
+                    borderRadius: 1,
+                    barPercentage: 0.6,
                     categoryPercentage: 0.8
                 });
             }
@@ -2288,11 +2338,12 @@
                 datasets.push({
                     label: 'Diaper',
                     data: diaperData,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(52, 211, 153, 0.7)',
+                    borderColor: 'rgba(52, 211, 153, 1)',
                     borderWidth: 1,
-                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                    barPercentage: 0.7,
+                    borderSkipped: false,
+                    borderRadius: 1,
+                    barPercentage: 0.6,
                     categoryPercentage: 0.8
                 });
             }
@@ -2305,7 +2356,8 @@
                     backgroundColor: 'rgba(251, 191, 36, 0.8)',
                     borderColor: 'rgba(251, 191, 36, 1)',
                     borderWidth: 1,
-                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
+                    borderSkipped: false,
+                    borderRadius: 1,
                     barPercentage: 0.7,
                     categoryPercentage: 0.8
                 });
@@ -2430,6 +2482,7 @@
                     
                     coloredSection.style.left = `${startPercent}%`;
                     coloredSection.style.width = `${width}%`;
+                    coloredSection.style.borderRadius = '0';
                     
                     console.log(`Adding ${event.category} colored section:`, {
                         start: startPercent,
@@ -2529,20 +2582,11 @@
             document.getElementById('clickedTime').textContent = timeStr;
             const eventsContainer = document.getElementById('clickedEvents');
             
-            // Get the icon from the event type
-            const iconMap = {
-                'Feed Start': '🍼', 'Feed End': '🍼', 'Feed': '🍼',
-                'Sleep Start': '😴', 'Sleep End': '😴', 'Sleep': '😴',
-                'Diaper': '🩱', 'Medicine': '💊', 'Bath': '🛁',
-                'Doctor': '👨‍⚕️', 'Milestone': '⭐', 'Other': '📝'
-            };
-            
-            const baseType = eventType.replace(' Start', '').replace(' End', '');
-            const icon = iconMap[eventType] || iconMap[baseType] || '📝';
+            const iconSvg = ICONS[eventType] || ICONS['default'];
             
             eventsContainer.innerHTML = `
                 <div class="event-item">
-                    <span>${icon}</span>
+                    <span style="display:inline-flex;vertical-align:middle;width:20px;height:20px;color:var(--primary)">${iconSvg}</span>
                     <span>${eventType}</span>
                 </div>
             `;
@@ -2613,7 +2657,7 @@
             if (!dayEvents || dayEvents.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">📭</div>
+                        <div class="icon">${ICONS['default']}</div>
                         <h3>No events for this day</h3>
                         <p>Add events to see them here</p>
                     </div>
@@ -2681,7 +2725,13 @@
                     minute: '2-digit',
                     hour12: false
                 });
-                const typeClass = event.type.toLowerCase();
+                
+                let typeClass = 'custom';
+                if (event.type.includes('Feed')) typeClass = 'feed';
+                else if (event.type.includes('Sleep')) typeClass = 'sleep';
+                else if (event.type.includes('Diaper')) typeClass = 'diaper';
+                else if (event.type.includes('Milestone')) typeClass = 'milestone';
+
                 let intervalText = '';
                 if (event.type === 'Feed End') {
                     const durationSinceFeedStart = feedEndToDuration.get(event.id);
@@ -2689,9 +2739,12 @@
                         intervalText = ` • ${durationSinceFeedStart}`;
                     }
                 }
+                
+                const iconSvg = ICONS[event.type] || ICONS['default'];
+                
                 return `
                     <div class="event-item">
-                        <div class="event-icon ${typeClass}">${event.icon}</div>
+                        <div class="event-icon ${typeClass}">${iconSvg}</div>
                         <div class="event-details">
                             <div class="event-type">${event.type}</div>
                             <div class="event-time">${timeStr}${intervalText}</div>

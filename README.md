@@ -30,49 +30,158 @@ No database, no auth, just simple CRUD via PHP.
 
 ### Prerequisites
 
-- PHP 8+ in your PATH
-- (Optional) Python 3.7+ for Owlet integration
+- **PHP 8.0+** - [Download PHP](https://www.php.net/downloads) or use a package manager
+- **(Optional) Python 3.7+** - For Owlet Smart Sock integration
+- **Modern browser** - Chrome, Safari, Firefox, Edge (for PWA support)
 
-### Running the Server
+### Local Setup & Running
 
-From the project root:
+#### Windows
+
+1. **Clone or download the project:**
+   ```bash
+   git clone <repository-url> C:\Projects\BabyMonitor
+   cd C:\Projects\BabyMonitor
+   ```
+
+2. **Verify PHP is installed:**
+   ```bash
+   php -v
+   ```
+   If not found, [download PHP](https://www.php.net/downloads) and add it to your PATH.
+
+3. **Start the development server:**
+   ```bash
+   php -S localhost:8000
+   ```
+   Or to access from other devices on your network:
+   ```bash
+   php -S 0.0.0.0:8000
+   ```
+
+4. **Open in your browser:**
+   - Local access: `http://localhost:8000`
+   - Network access: `http://<your-ip>:8000` (e.g., `http://192.168.1.100:8000`)
+
+#### Linux/Mac
+
+1. **Clone or download the project:**
+   ```bash
+   git clone <repository-url> ~/BabyMonitor
+   cd ~/BabyMonitor
+   ```
+
+2. **Verify PHP is installed:**
+   ```bash
+   php -v
+   ```
+   If not found, install via your package manager:
+   ```bash
+   # macOS (Homebrew)
+   brew install php
+   
+   # Ubuntu/Debian
+   sudo apt update && sudo apt install php
+   
+   # CentOS/RHEL
+   sudo yum install php
+   ```
+
+3. **Start the development server:**
+   ```bash
+   php -S localhost:8000
+   ```
+   Or to access from other devices:
+   ```bash
+   php -S 0.0.0.0:8000
+   ```
+
+4. **Open in your browser:**
+   - Local access: `http://localhost:8000`
+   - Network access: `http://<your-ip>:8000`
+
+#### Keeping the Server Running
+
+**Option 1: Terminal/Console (Basic)**
+- Keep the terminal window open while using the app
+- Press `Ctrl+C` to stop the server
+
+**Option 2: Background Service (Recommended)**
+- **Windows:** Use `start_owlet_service.bat` or Task Scheduler
+- **Linux/Mac:** Use systemd or `nohup` to keep it running in the background
+
+```bash
+# Linux/Mac - Run in background
+nohup php -S 0.0.0.0:8000 > server.log 2>&1 &
+```
+
+### Accessing on Mobile Devices
+
+#### Finding Your Computer's IP Address
 
 **Windows:**
 ```bash
-php -S 0.0.0.0:8000 -t C:\Projects\BabyMonitor
+# Open Command Prompt and run:
+ipconfig
+
+# Look for "IPv4 Address" under your WiFi adapter (e.g., 192.168.1.100)
 ```
 
 **Linux/Mac:**
 ```bash
-php -S 0.0.0.0:8000 -t /path/to/BabyMonitor
+# Option 1
+ifconfig
+
+# Option 2
+ip addr
+
+# Look for your WiFi adapter's IP address (usually starts with 192.168.x.x)
 ```
 
-Then open `http://localhost:8000` on your computer.
+#### iOS (iPhone/iPad)
 
-### Using on iPhone
+1. **Ensure your iPhone is on the same WiFi network as your computer**
 
-1. **Find your computer's IP address:**
-   - **Windows:** Open Command Prompt (Win + R, type `cmd`), run `ipconfig`, look for "IPv4 Address" under your WiFi adapter
-   - **Linux/Mac:** Run `ifconfig` or `ip addr`, look for your WiFi adapter's IP address
-   - Example: `192.168.1.100`
+2. **Open Safari and navigate to:**
+   ```
+   http://<YOUR-COMPUTER-IP>:8000
+   ```
+   Example: `http://192.168.1.100:8000`
 
-2. **On your iPhone Safari, navigate to:**
-   - `http://YOUR-IP-ADDRESS:8000` (e.g., `http://192.168.1.100:8000`)
-   - **Make sure your iPhone and computer are on the same WiFi network!**
-
-3. **Add to Home Screen:**
-   - Tap the **Share** button (square with arrow pointing up)
+3. **Install as PWA (Add to Home Screen):**
+   - Tap the **Share** button (square with arrow ⬆)
    - Scroll down and tap **"Add to Home Screen"**
-   - Name it "Baby Monitor"
+   - Name it `Baby Monitor`
    - Tap **"Add"**
-   - The app will appear on your home screen with the diaper icon
-   - Tap it to launch in full-screen mode (no Safari UI)
+   - The app icon appears on your home screen
+   - Tap it to launch in full-screen standalone mode (no Safari UI)
 
-### Using on Android
+4. **Using the App:**
+   - Tap the icon to open in full-screen mode
+   - Works offline for basic event tracking
+   - Requires WiFi/network for Owlet vital monitoring
 
-1. Follow the same steps as iPhone to access the app via your computer's IP address
-2. In Chrome, tap the menu (three dots) → **"Add to Home screen"**
-3. The app will install as a PWA and launch in standalone mode
+#### Android (Chrome)
+
+1. **Ensure your Android device is on the same WiFi network**
+
+2. **Open Chrome and navigate to:**
+   ```
+   http://<YOUR-COMPUTER-IP>:8000
+   ```
+
+3. **Install as PWA (Add to Home Screen):**
+   - Tap the **menu** (⋮ three dots) in the top-right
+   - Tap **"Add to Home screen"**
+   - Confirm the app name
+   - The app installs and appears on your home screen
+   - Tap it to launch in standalone mode
+
+#### Desktop/Laptop
+
+- Simply open `http://localhost:8000` in your browser
+- Works best in Chrome, Safari, Firefox, or Edge
+- Can be added to home screen on desktop browsers (some versions)
 
 ## Using the App
 
@@ -234,19 +343,28 @@ curl -X DELETE http://localhost:8000/events.php \
 
 ## Owlet Smart Sock Integration (Optional)
 
-### Installation
+### Quick Start - Owlet Setup
 
-1. **Install Python dependencies:**
+1. **Ensure Python 3.7+ is installed:**
+   ```bash
+   # Check if Python is installed
+   python --version
+   # or
+   python3 --version
+   ```
 
-```bash
-# Windows
-pip install -r requirements.txt
+2. **Install Python dependencies:**
+   ```bash
+   # Windows
+   pip install -r requirements.txt
+   
+   # Linux/Mac
+   pip3 install -r requirements.txt
+   ```
+   
+   This installs: `pyowletapi`, `requests`, and other required packages
 
-# Linux/Mac
-pip3 install -r requirements.txt
-```
-
-2. **Configure Owlet credentials in `owlet_config.json`:**
+3. **Configure Owlet credentials in `owlet_config.json`:**
 
 ```json
 {
@@ -272,68 +390,144 @@ pip3 install -r requirements.txt
 
 ### Starting the Service
 
+#### Quick Start (Development)
+
+**Windows (Command Prompt or PowerShell):**
+```bash
+# From the project root directory
+python owlet_sync.py
+```
+
+**Linux/Mac (Terminal):**
+```bash
+# From the project root directory
+python3 owlet_sync.py
+```
+
+Keep this terminal window open while using the app. You'll see sync status messages in the console.
+
+#### Using Startup Scripts
+
 **Windows:**
 ```bash
+# Double-click this file or run:
 start_owlet_service.bat
 ```
 
 **Linux/Mac:**
 ```bash
+# Make the script executable
 chmod +x start_owlet_service.sh
+
+# Run it
 ./start_owlet_service.sh
 ```
 
-**Or run directly:**
-```bash
-python3 owlet_sync.py
-```
+### Running as Background Service (Production)
 
-### Running as Background Service
+#### Windows - Task Scheduler
 
-**Windows (Task Scheduler):**
-1. Open Task Scheduler (Win + R, type `taskschd.msc`)
-2. Create Basic Task
-3. Set trigger to run at startup
-4. Set action to run: `C:\Projects\BabyMonitor\start_owlet_service.bat`
+1. **Open Task Scheduler:**
+   - Press `Win + R`, type `taskschd.msc`, press Enter
+   - Or search for "Task Scheduler" in the Start menu
 
-**Linux (systemd):**
-Create `/etc/systemd/system/owlet-sync.service`:
+2. **Create a new task:**
+   - Right-click **Task Scheduler Library** → **Create Basic Task**
+   - **Name:** `Baby Monitor Owlet Sync`
+   - **Description:** `Keep Owlet vital data in sync`
 
-```ini
-[Unit]
-Description=Owlet Sync Service
-After=network.target
+3. **Set the trigger:**
+   - **Trigger:** At Startup
+   - Click **Next**
 
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/var/www/BabyMonitor
-ExecStart=/usr/bin/python3 /var/www/BabyMonitor/owlet_sync.py
-Restart=always
-RestartSec=30
+4. **Set the action:**
+   - **Action:** Start a program
+   - **Program/script:** `C:\Projects\BabyMonitor\start_owlet_service.bat`
+   - **Start in:** `C:\Projects\BabyMonitor`
+   - Click **Next** → **Finish**
 
-[Install]
-WantedBy=multi-user.target
-```
+5. **Test it:**
+   - Right-click the task → **Run**
+   - Verify the Owlet data starts syncing (check `owlet_sync.log`)
 
-Then:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable owlet-sync
-sudo systemctl start owlet-sync
-```
+#### Linux/Mac - systemd Service
+
+1. **Create the service file:**
+   ```bash
+   sudo nano /etc/systemd/system/owlet-sync.service
+   ```
+
+2. **Paste this content (adjust paths as needed):**
+   ```ini
+   [Unit]
+   Description=Baby Monitor Owlet Sync Service
+   After=network.target
+   
+   [Service]
+   Type=simple
+   User=www-data
+   WorkingDirectory=/path/to/BabyMonitor
+   ExecStart=/usr/bin/python3 /path/to/BabyMonitor/owlet_sync.py
+   Restart=always
+   RestartSec=30
+   StandardOutput=append:/path/to/BabyMonitor/owlet_sync.log
+   StandardError=append:/path/to/BabyMonitor/owlet_sync.log
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. **Enable and start the service:**
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable owlet-sync
+   sudo systemctl start owlet-sync
+   ```
+
+4. **Check service status:**
+   ```bash
+   sudo systemctl status owlet-sync
+   
+   # View logs
+   sudo journalctl -u owlet-sync -f
+   ```
 
 ### Monitoring Service Activity
 
-Check `owlet_sync.log` for activity:
+#### Check the Log File
 
+**Windows (Command Prompt):**
 ```bash
-# Windows
+# View the entire log
 type owlet_sync.log
 
-# Linux/Mac
+# View last 20 lines
+powershell -Command "Get-Content owlet_sync.log -Tail 20"
+
+# Follow log in real-time
+powershell -Command "Get-Content owlet_sync.log -Tail 20 -Wait"
+```
+
+**Linux/Mac (Terminal):**
+```bash
+# View the entire log
+cat owlet_sync.log
+
+# View last 20 lines
+tail -20 owlet_sync.log
+
+# Follow log in real-time (Ctrl+C to stop)
 tail -f owlet_sync.log
 ```
+
+#### What to Look For in the Log
+
+- ✅ `Owlet sync started` - Service is running
+- ✅ `Successfully fetched vital data` - Data is syncing
+- ✅ `Updated owlet_latest.json` - Latest readings stored
+- ⚠️ `Authentication failed` - Check credentials in `owlet_config.json`
+- ⚠️ `Connection error` - Check network connectivity
+- ✅ `Completed in X seconds` - Sync timing information
 
 ### Data Structure
 
@@ -386,36 +580,125 @@ GET http://localhost:8000/events.php?summaries=true
 ```
 Returns daily summaries for the past 30 days with hourly granularity from `owlet_daily_summaries/` directory, including today's in-progress hourly data.
 
-### Troubleshooting
+### Troubleshooting Owlet Integration
 
-**"No Owlet Data Available" message:**
-1. Verify `owlet_config.json` has correct credentials
-2. Check service is running (look for console window or check `owlet_sync.log`)
-3. Ensure PHP endpoint URL is correct
-4. Check network connectivity
+#### "No Owlet Data Available" Message
 
-**"Authentication failed" error:**
-1. Verify email and password are correct
-2. Try logging into the official Owlet app to confirm credentials work
-3. Check the `region` setting matches your account
-4. Owlet may have rate limits - wait a few minutes and restart
+**Quick checks:**
+1. ✓ Verify the Owlet service is running
+   - Check if the terminal/console window is still open
+   - Check `owlet_sync.log` for errors
+   
+2. ✓ Verify `owlet_config.json` has correct credentials:
+   ```bash
+   # Windows/Linux/Mac - View the file
+   cat owlet_config.json  # Linux/Mac
+   type owlet_config.json  # Windows
+   ```
+   
+3. ✓ Check network connectivity:
+   ```bash
+   ping owlet.com
+   ```
 
-**Sync not completing:**
-1. Check internet connectivity on the server
-2. Verify `php_api_endpoint` URL is accessible
-3. Check recent `owlet_sync.log` entries for errors
+4. ✓ Verify PHP endpoint is reachable:
+   ```bash
+   curl http://localhost:8000/events.php
+   ```
 
-**Sleep events not being created:**
-1. Ensure `auto_create_events` is set to `true`
-2. Check baby is wearing the Owlet sock
-3. Review `owlet_sync.log` for detection details
+5. **Solution:** Restart both the PHP server and Owlet sync service
 
-**Vital data not updating:**
-1. Verify Owlet sock is connected and charging
-2. Check `owlet_latest.json` to confirm data is being received
-3. Check `owlet_minutes/` directory for daily data files
-4. Ensure sync interval is reasonable (not too short)
-5. Check PHP file permissions for writing to data files
+#### "Authentication Failed" Error
+
+**Check credentials:**
+1. Verify email and password are correct in `owlet_config.json`
+2. Test logging into the official Owlet mobile app with the same credentials
+3. Verify the `region` matches your account:
+   - `us-east-1` for USA
+   - `eu-west-1` for Europe
+   - Check other available regions in the Owlet app settings
+
+4. **Rate limiting:** Owlet may block repeated failed attempts
+   - Wait 30 minutes before retrying
+   - Restart the service with correct credentials
+
+#### Sync Not Completing
+
+**Diagnostics:**
+1. Check internet connectivity:
+   ```bash
+   ping google.com
+   ```
+
+2. Verify PHP endpoint is working:
+   ```bash
+   curl http://localhost:8000/events.php?latest=true
+   ```
+
+3. Check file permissions (Linux/Mac):
+   ```bash
+   ls -la owlet_latest.json
+   chmod 644 owlet_latest.json  # Make readable/writable
+   ```
+
+4. Review the log for specific errors:
+   ```bash
+   tail -50 owlet_sync.log  # View last 50 lines
+   ```
+
+#### Sleep Events Not Being Created
+
+**Check configuration:**
+1. Verify `auto_create_events` is `true` in `owlet_config.json`
+2. Ensure baby is wearing the Owlet sock
+3. Check if movement data is being received:
+   ```bash
+   # View latest data
+   cat owlet_latest.json
+   ```
+4. Review detection parameters in `owlet_sync.log`
+
+#### Vital Data Not Updating
+
+**Verification steps:**
+1. **Owlet sock status:**
+   - Verify sock is connected to Owlet account
+   - Check sock is charged (battery level visible in app)
+   - Check baby is wearing the sock
+
+2. **Data files:**
+   ```bash
+   # Check if data is being created
+   ls -la owlet_latest.json
+   cat owlet_latest.json
+   
+   # Check minute-by-minute data
+   ls -la owlet_minutes/
+   cat owlet_minutes/owlet_minutes_2025-11-20.json  # Today's file
+   ```
+
+3. **Sync interval:**
+   - Ensure `sync_interval_minutes` is set to a reasonable value (15 min recommended)
+   - Not too short (avoid rate limiting) or too long (stale data)
+
+4. **Permissions:**
+   ```bash
+   # Linux/Mac - ensure write permissions
+   chmod -R 755 owlet_minutes/
+   chmod -R 755 owlet_daily_summaries/
+   ```
+
+5. **Last resort:** Restart both services
+   ```bash
+   # Stop PHP server (Ctrl+C in terminal)
+   # Stop Owlet sync (Ctrl+C in terminal)
+   
+   # Restart PHP server
+   php -S localhost:8000
+   
+   # Restart Owlet sync
+   python3 owlet_sync.py
+   ```
 
 ## Daily Backup (Production)
 
@@ -538,14 +821,76 @@ Check `backup_events.log` for backup activity and any errors.
 
 ⚠️ **Important Security Considerations:**
 
-- This is intentionally simple and local‑first
-- **Do not expose publicly** without adding authentication and validation
-- CORS is open (`Access-Control-Allow-Origin: *`) for local/mobile testing - restrict in production
-- Owlet integration uses unofficial `pyowletapi` library - respect Owlet's terms of service
-- Store `owlet_config.json` securely (contains credentials)
-- **Don't commit credentials to version control** - add `owlet_config.json` to `.gitignore`
-- Consider adding authentication if deploying to a public server
-- Validate and sanitize all user inputs in production
+### Local Use (Recommended)
+
+- ✅ This is intentionally simple and designed for **local/home network use only**
+- ✅ Safe for use on a private home WiFi network
+- ✅ No internet connection required for basic event tracking
+- ✅ Data stays on your local device/server
+
+### Production/Public Deployment
+
+**Do NOT expose this app publicly without security measures:**
+
+- ❌ **Do not expose publicly** without adding authentication and validation
+- ❌ **Never deploy on the internet** without implementing:
+  - User authentication (login/password)
+  - HTTPS/SSL encryption
+  - Input validation and sanitization
+  - Rate limiting
+
+- ⚠️ **CORS Security:**
+  - Currently open (`Access-Control-Allow-Origin: *`) for local testing
+  - Restrict in production to specific domains only
+
+- ⚠️ **Owlet Integration:**
+  - Uses unofficial `pyowletapi` library - respect Owlet's terms of service
+  - Your credentials are stored in `owlet_config.json`
+  - **Never commit credentials to version control**
+
+### Protecting Your Data
+
+1. **Secure `owlet_config.json`:**
+   ```bash
+   # Hide from version control
+   echo "owlet_config.json" >> .gitignore
+   
+   # Linux/Mac - Restrict file permissions
+   chmod 600 owlet_config.json
+   ```
+
+2. **Regular backups:**
+   - Backup `events.json` regularly
+   - Use the database backup feature (optional)
+   - Store backups securely
+
+3. **Network security:**
+   - Only use on trusted home WiFi networks
+   - Disable server when not in use
+   - Change default port if needed
+
+## Getting Help
+
+### Common Issues
+
+**Server won't start:**
+- Check if port 8000 is already in use: `netstat -an | findstr :8000` (Windows) or `lsof -i :8000` (Mac)
+- Try a different port: `php -S localhost:8001`
+
+**Can't access from mobile:**
+- Verify both devices are on the same WiFi network
+- Use your computer's IP address, not `localhost`
+- Check firewall isn't blocking port 8000
+
+**Data not showing:**
+- Refresh the page (pull down on iOS PWA)
+- Clear browser cache
+- Check `events.json` exists in the project root
+
+**Still stuck?**
+- Check the browser console for errors (F12 → Console tab)
+- Review `owlet_sync.log` for Owlet-specific issues
+- Search GitHub issues or create a new one
 
 ## Roadmap (Nice-to-Have)
 
