@@ -301,17 +301,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
         exit();
     }
 
+    $eventId = $input['id'];
     $events = getEvents($eventsFile);
+    
+    // If events is wrapped in an 'events' key, unwrap it
+    if (isset($events['events']) && is_array($events['events'])) {
+        $events = $events['events'];
+        $isWrapped = true;
+    } else {
+        $isWrapped = false;
+    }
+    
     $beforeCount = count($events);
-    $events = array_values(array_filter($events, function($e) use ($input) {
-        return $e['id'] != $input['id'];
+    $events = array_values(array_filter($events, function($e) use ($eventId) {
+        return (string)$e['id'] !== (string)$eventId;
     }));
+    
     if ($beforeCount === count($events)) {
         http_response_code(404);
-        echo json_encode(['error' => 'Event not found']);
+        echo json_encode(['error' => 'Event not found', 'id_received' => $eventId]);
         exit();
     }
 
+    // Re-wrap if necessary
+    if ($isWrapped) {
+        $events = ['events' => $events];
+    }
+    
     if (saveEvents($eventsFile, $events)) {
         echo json_encode(['success' => true, 'message' => 'Event deleted']);
     } else {

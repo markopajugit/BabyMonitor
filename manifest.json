@@ -2,12 +2,13 @@
   "name": "Baby Monitor",
   "short_name": "Baby Monitor",
   "description": "Track your baby's daily activities and milestones",
-  "version": "1.6",
-  "start_url": "/index.html?v=1.4",
+  "version": "1.7.1",
+  "start_url": "/index.html?v=1.7",
   "display": "standalone",
   "background_color": "#fef3c7",
   "theme_color": "#ec4899",
   "orientation": "portrait",
+  "permissions": ["notifications"],
   "icons": [
     {
       "src": "./icons/web/favicon.ico",

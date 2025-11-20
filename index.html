@@ -1,41 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
     <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Baby Monitor">
-    
+
     <!-- App Icons -->
     <link rel="icon" href="favicon.ico" sizes="any">
-    
+
     <!-- iOS Home Screen Icons -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120x120.png">
-    
+
     <!-- PWA Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    
+
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json?v=1.4">
-    
+    <link rel="manifest" href="manifest.json?v=1.6.5">
+
     <!-- Feather Icons CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.2/dist/feather.min.js"
+        integrity="sha256-6kZaxraaA33En9pqscWF+VclCR7/RRXfYduR2dPF5U4=" crossorigin="anonymous"></script>
+
     <!-- Cache Control - Prevent aggressive caching on iOS -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    
+
     <title>Baby Monitor</title>
-    <link rel="stylesheet" href="styles.css?v=1.7">
+    <link rel="stylesheet" href="styles.css?v=1.6.5">
+
+    <!-- Register Service Worker for PWA Notifications -->
+    <script>
+        // Register service worker on page load
+        window.addEventListener('load', () => {
+            if ('serviceWorker' in navigator) {
+                const appVersion = '1.6.5';
+                navigator.serviceWorker.register('service-worker.js?v=' + appVersion)
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
+        });
+    </script>
 </head>
+
 <body>
     <!-- Main Grid -->
     <div class="grid-container" id="gridContainer">
@@ -53,7 +73,7 @@
             </span>
             <span>View Day</span>
         </button>
-        
+
         <!-- Row 2: View Milestones/Events, Quick Diaper -->
         <button class="grid-btn btn-milestone" id="btnViewMilestones" onclick="openMilestonesView()">
             <span class="icon">
@@ -67,7 +87,7 @@
             </span>
             <span>Quick Diaper</span>
         </button>
-        
+
         <!-- Row 3: Feed Start, Feed End -->
         <button class="grid-btn btn-feed" id="btnFeedStart" onclick="quickEvent('Feed Start', 'Feed Start')">
             <span class="icon">
@@ -81,7 +101,7 @@
             </span>
             <span>Feed End</span>
         </button>
-        
+
         <!-- Row 4: Sleep Start, Sleep End -->
         <button class="grid-btn btn-sleep" id="btnSleepStart" onclick="quickEvent('Sleep Start', 'Sleep Start')">
             <span class="icon">
@@ -127,10 +147,12 @@
                 </div>
                 <div class="form-group form-group-notes">
                     <label for="eventNotes">Notes (optional)</label>
-                    <textarea id="eventNotes" class="form-textarea" placeholder="Add any additional details..."></textarea>
+                    <textarea id="eventNotes" class="form-textarea"
+                        placeholder="Add any additional details..."></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="modalCancelBtn" onclick="closeModal()">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="modalCancelBtn"
+                        onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Save</button>
                 </div>
             </form>
@@ -163,7 +185,8 @@
                 <i data-feather="chevron-left"></i>
             </button>
             <h2 id="milestonesHeaderTitle">Milestones</h2>
-            <button class="add-event-btn" id="milestonesAddBtn" onclick="openModal(); document.getElementById('eventType').value = 'Milestone';" title="Add Milestone">
+            <button class="add-event-btn" id="milestonesAddBtn"
+                onclick="openModal(); document.getElementById('eventType').value = 'Milestone';" title="Add Milestone">
                 <i data-feather="plus"></i>
             </button>
         </div>
@@ -185,7 +208,8 @@
                 <i data-feather="chevron-left"></i>
             </button>
             <h2 id="owletHeaderTitle">Owlet Monitor</h2>
-            <button class="back-btn btn-history" id="owletHistoryBtn" onclick="openOwletHistoryView()" title="View historical data">
+            <button class="back-btn btn-history" id="owletHistoryBtn" onclick="openOwletHistoryView()"
+                title="View historical data">
                 <span class="history-icon">
                     <i data-feather="bar-chart-2"></i>
                 </span>
@@ -195,7 +219,7 @@
             <div class="owlet-status" id="owletStatus">
                 <div class="empty-state" id="owletEmptyState">
                     <div class="icon">
-                        <img src="public/assets/icons/sock-icon.svg" alt="Sock Icon" class="sock-icon" width="48" height="48">
+                        <img src="263806.png" alt="Sock Icon" class="sock-icon" width="48" height="48">
                     </div>
                     <h3>Loading Owlet data...</h3>
                     <p>Please wait while we fetch your baby's vitals</p>
@@ -292,7 +316,7 @@
                 </div>
                 <div class="stat-item stat-diaper">
                     <div class="stat-icon diaper">
-                        <img src="public/assets/icons/diaper-icon.png" alt="Diaper Icon" class="diaper-icon" width="18" height="18">
+                        <img src="134996.png" alt="Diaper Icon" class="diaper-icon" width="18" height="18">
                     </div>
                     <div class="stat-details">
                         <div class="stat-duration" id="diaperCount">0</div>
@@ -309,10 +333,10 @@
                     </div>
                 </div>
             </div>
-        
-        <!-- Day Events List -->
-        <div class="event-list" id="dayEventList"></div>
-            
+
+            <!-- Day Events List -->
+            <div class="event-list" id="dayEventList"></div>
+
         </div>
     </div>
 
@@ -329,6 +353,7 @@
 
     <!-- Chart.js for HR and O2 charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="app.js?v=1.6"></script>
+    <script src="app.js?v=1.6.5"></script>
 </body>
+
 </html>
