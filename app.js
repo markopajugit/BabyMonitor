@@ -2359,37 +2359,7 @@
                             }
                         },
                         tooltip: {
-                            enabled: true,
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            titleColor: '#1e293b',
-                            bodyColor: '#475569',
-                            borderColor: '#e2e8f0',
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: true,
-                            callbacks: {
-                                title: function(context) {
-                                    const item = context[0].raw;
-                                    return item.rawEvent ? item.rawEvent.title : '';
-                                },
-                                label: function(context) {
-                                    const item = context.raw;
-                                    if (!item.rawEvent) return '';
-                                    
-                                    const event = item.rawEvent;
-                                    let timeStr;
-                                    
-                                    if (event.type === 'duration') {
-                                        const start = event.startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-                                        const end = event.endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-                                        timeStr = `${start} - ${end}`;
-                                    } else {
-                                        timeStr = event.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
-                                    }
-                                    
-                                    return [timeStr, event.notes || ''];
-                                }
-                            }
+                            enabled: false
                         }
                     },
                     scales: {
@@ -2806,7 +2776,7 @@
                         minute: '2-digit',
                         hour12: false
                     });
-                    coloredSection.title = `${event.title}: ${startTimeStr} - ${endTimeStr}${event.notes ? '\n' + event.notes : ''}`;
+                    // Removed title attribute to prevent duplicate tooltips with custom popup
                     
                     timelineTrack.appendChild(coloredSection);
                     
@@ -2818,7 +2788,7 @@
                     const startIcon = document.createElement('div');
                     startIcon.className = 'event-marker-icon';
                     startIcon.innerHTML = event.icon;
-                    startIcon.title = `${event.title} Start - ${startTimeStr}${event.notes ? '\n' + event.notes : ''}`;
+                    // Removed title attribute to prevent duplicate tooltips with custom popup
                     startIcon.addEventListener('click', (e) => {
                         e.stopPropagation();
                         showEventInfo(`${event.title} Start`, startTimeStr, e.clientX, e.clientY);
@@ -2834,7 +2804,7 @@
                     const endIcon = document.createElement('div');
                     endIcon.className = 'event-marker-icon';
                     endIcon.innerHTML = event.icon;
-                    endIcon.title = `${event.title} End - ${endTimeStr}${event.notes ? '\n' + event.notes : ''}`;
+                    // Removed title attribute to prevent duplicate tooltips with custom popup
                     endIcon.addEventListener('click', (e) => {
                         e.stopPropagation();
                         showEventInfo(`${event.title} End`, endTimeStr, e.clientX, e.clientY);
@@ -2859,7 +2829,7 @@
                     const instantIcon = document.createElement('div');
                     instantIcon.className = 'event-marker-icon';
                     instantIcon.innerHTML = event.icon;
-                    instantIcon.title = `${event.title} - ${timeStr}${event.notes ? '\n' + event.notes : ''}`;
+                    // Removed title attribute to prevent duplicate tooltips with custom popup
                     instantIcon.addEventListener('click', (e) => {
                         e.stopPropagation();
                         showEventInfo(event.title, timeStr, e.clientX, e.clientY);
