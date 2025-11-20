@@ -2156,10 +2156,10 @@
                 };
 
                 // Generate Labels with Stats
-                const sleepLabel = `Sleep (${formatDuration(totalSleepMinutes)})`;
-                const feedLabel = `Feed (${formatDuration(totalFeedMinutes)})`;
-                const diaperLabel = `Diaper (${diaperCount})`;
-                const otherLabel = `Other (${otherCount})`;
+                const sleepLabel = 'Sleep';
+                const feedLabel = 'Feed';
+                const diaperLabel = 'Diaper';
+                const otherLabel = 'Other';
 
                 const dataPoint = {
                     x: [startHour, endHour],
@@ -2213,13 +2213,6 @@
                 return `${hours}h ${minutes}m`;
             };
 
-            const categories = [
-                `Sleep (${formatDuration(totalSleepMinutes)})`,
-                `Feed (${formatDuration(totalFeedMinutes)})`,
-                `Diaper (${diaperCount})`,
-                `Other (${otherCount})`
-            ];
-            
             // Clear and re-populate data with correct Y labels
             sleepData.length = 0;
             feedData.length = 0;
@@ -2244,64 +2237,83 @@
                 };
                 
                 if (event.category === 'sleep') {
-                    dataPoint.y = categories[0];
+                    dataPoint.y = 'Sleep';
                     sleepData.push(dataPoint);
                 } else if (event.category === 'feed') {
-                    dataPoint.y = categories[1];
+                    dataPoint.y = 'Feed';
                     feedData.push(dataPoint);
                 } else if (event.category === 'diaper') {
-                    dataPoint.y = categories[2];
+                    dataPoint.y = 'Diaper';
                     diaperData.push(dataPoint);
                 } else {
-                    dataPoint.y = categories[3];
+                    dataPoint.y = 'Other';
                     otherData.push(dataPoint);
                 }
             });
 
+            // Build datasets only for categories with events
+            const datasets = [];
+            const labels = [];
+
+            if (sleepData.length > 0) {
+                labels.push('Sleep');
+                datasets.push({
+                    label: 'Sleep',
+                    data: sleepData,
+                    backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                });
+            }
+
+            if (feedData.length > 0) {
+                labels.push('Feed');
+                datasets.push({
+                    label: 'Feed',
+                    data: feedData,
+                    backgroundColor: 'rgba(236, 72, 153, 0.8)',
+                    borderColor: 'rgba(236, 72, 153, 1)',
+                    borderWidth: 1,
+                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                });
+            }
+
+            if (diaperData.length > 0) {
+                labels.push('Diaper');
+                datasets.push({
+                    label: 'Diaper',
+                    data: diaperData,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                });
+            }
+
+            if (otherData.length > 0) {
+                labels.push('Other');
+                datasets.push({
+                    label: 'Other',
+                    data: otherData,
+                    backgroundColor: 'rgba(251, 191, 36, 0.8)',
+                    borderColor: 'rgba(251, 191, 36, 1)',
+                    borderWidth: 1,
+                    borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                });
+            }
+
             return {
-                labels: categories,
-                datasets: [
-                    {
-                        label: 'Sleep',
-                        data: sleepData,
-                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
-                        borderColor: 'rgba(139, 92, 246, 1)',
-                        borderWidth: 1,
-                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.8
-                    },
-                    {
-                        label: 'Feed',
-                        data: feedData,
-                        backgroundColor: 'rgba(236, 72, 153, 0.8)',
-                        borderColor: 'rgba(236, 72, 153, 1)',
-                        borderWidth: 1,
-                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.8
-                    },
-                    {
-                        label: 'Diaper',
-                        data: diaperData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        borderWidth: 1,
-                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.8
-                    },
-                    {
-                        label: 'Other',
-                        data: otherData,
-                        backgroundColor: 'rgba(251, 191, 36, 0.8)',
-                        borderColor: 'rgba(251, 191, 36, 1)',
-                        borderWidth: 1,
-                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
-                        barPercentage: 0.7,
-                        categoryPercentage: 0.8
-                    }
-                ]
+                labels: labels,
+                datasets: datasets
             };
         }
 

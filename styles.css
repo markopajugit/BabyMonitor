@@ -332,8 +332,8 @@ body {
 }
 
 .add-event-btn {
-    background: var(--primary);
-    color: var(--white);
+    background: var(--white);
+    color: var(--primary);
     border: none;
     width: 40px;
     height: 40px;
@@ -344,8 +344,13 @@ body {
     cursor: pointer;
     margin-left: 15px;
     box-shadow: var(--shadow);
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
     font-size: 20px;
+    font-weight: 600;
+}
+
+.add-event-btn:hover {
+    transform: scale(1.05);
 }
 
 .add-event-btn:active {
@@ -542,14 +547,22 @@ body {
 }
 
 .milestone-box.empty {
-    border: 2px dashed #e2e8f0;
-    background: transparent;
+    border: 2px dashed #cbd5e1;
+    background: var(--white);
     color: var(--text-light);
+    transition: all 0.3s ease;
 }
 
 .milestone-box.empty:hover {
     border-color: var(--primary);
+    border-style: solid;
     color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.milestone-box.empty:active {
+    transform: scale(0.98);
 }
 
 /* Day Timeline Styles */
@@ -608,7 +621,7 @@ body {
     border: 1px solid #e2e8f0;
     position: relative;
     overflow: visible;
-    min-height: 132px;
+    min-height: 340px;
     margin-bottom: 16px;
 }
 
