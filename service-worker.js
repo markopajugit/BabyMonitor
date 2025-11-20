@@ -1,7 +1,7 @@
 // Baby Monitor Service Worker
 // Handles notifications and background sync
 
-const CACHE_VERSION = 'v1.6';
+const CACHE_VERSION = 'v1.7.1';
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
