@@ -432,6 +432,14 @@
                 const isO2AverageInvalid = latest_reading.oxygen_10_av !== null && latest_reading.oxygen_10_av !== undefined 
                     && (latest_reading.oxygen_10_av < 0 || latest_reading.oxygen_10_av > 100);
                 
+                // Validate skin temperature is between 30 and 40°C (reasonable range for body temperature)
+                const isTempInvalid = latest_reading.skin_temperature !== null && latest_reading.skin_temperature !== undefined 
+                    && (latest_reading.skin_temperature < 30 || latest_reading.skin_temperature > 40);
+                
+                // Validate movement is between 0 and 146
+                const isMovementInvalid = latest_reading.movement !== null && latest_reading.movement !== undefined 
+                    && (latest_reading.movement < 0 || latest_reading.movement > 146);
+                
                 // Check if container exists for first-time render
                 if (!document.getElementById('owletVitalsContainer')) {
                     statusDiv.innerHTML = `
@@ -470,18 +478,24 @@
                                     </div>
                                 </div>
                                 
-                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Skin Temperature</div>
-                                    <div id="owletTempValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                        <span>Skin Temperature</span>
+                                        <span id="tempInvalidIcon" style="cursor: pointer; font-size: 16px; color: #ef4444;">?</span>
+                                    </div>
+                                    <div id="owletTempValue" class="owlet-vital-value" style="font-size: 20px; font-weight: 600; color: #1e293b;">
                                         ${tempDisplay}
                                     </div>
                                 </div>
                             </div>
                             
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Movement</div>
-                                    <div id="owletMovementValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                        <span>Movement</span>
+                                        <span id="movementInvalidIcon" style="cursor: pointer; font-size: 16px; color: #ef4444;">?</span>
+                                    </div>
+                                    <div id="owletMovementValue" class="owlet-vital-value" style="font-size: 20px; font-weight: 600; color: #1e293b;">
                                         ${movementDisplay}
                                     </div>
                                 </div>
@@ -495,17 +509,19 @@
                             </div>
                             
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m)</div>
-                                    <div id="owletO2AvgValue" style="font-size: 20px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px;">O2 Average (10m) ${isO2AverageInvalid ? '<span id="o2AvgInvalidIcon" style="cursor: pointer; font-size: 16px; color: #ef4444; margin-left: 6px;">?</span>' : ''}</div>
+                                    <div id="owletO2AvgValue" class="owlet-vital-value" style="font-size: 20px; font-weight: 600; color: #1e293b;">
                                         ${o2AverageDisplay}
-                                        ${isO2AverageInvalid ? '<span id="o2AvgInvalidIcon" style="cursor: pointer; font-size: 18px; color: #ef4444;">?</span>' : ''}
                                     </div>
                                 </div>
                                 
-                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Sleep Status</div>
-                                    <div id="owletSleepValue" style="font-size: 16px; font-weight: 600; color: #1e293b;">
+                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                        <span>Sleep Status</span>
+                                        <span id="sleepStatusIcon" style="cursor: pointer; font-size: 16px; color: #ef4444;">?</span>
+                                    </div>
+                                    <div id="owletSleepValue" class="owlet-vital-value" style="font-size: 16px; font-weight: 600; color: #1e293b;">
                                         ${sleepStateDisplay}
                                     </div>
                                 </div>
@@ -525,6 +541,53 @@
                 const updateElement = (id, value) => {
                     const elem = document.getElementById(id);
                     if (elem) elem.textContent = value;
+                };
+                
+                const updateElementPreserveIcons = (id, value) => {
+                    const elem = document.getElementById(id);
+                    if (elem) {
+                        // Only update the first text node, preserving child elements (icons)
+                        if (elem.firstChild && elem.firstChild.nodeType === Node.TEXT_NODE) {
+                            elem.firstChild.textContent = value;
+                        } else if (elem.firstChild) {
+                            // If first child is not text, insert text before it
+                            elem.insertBefore(document.createTextNode(value), elem.firstChild);
+                        } else {
+                            elem.textContent = value;
+                        }
+                    }
+                };
+                
+                const positionTooltipWithBounds = (tooltip, triggerElement) => {
+                    const rect = triggerElement.getBoundingClientRect();
+                    const padding = 8;
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // Calculate position above the icon
+                    let left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
+                    let top = rect.top - tooltip.offsetHeight - padding;
+                    
+                    // Check left boundary
+                    if (left < padding) {
+                        left = padding;
+                    }
+                    // Check right boundary
+                    if (left + tooltip.offsetWidth > viewportWidth - padding) {
+                        left = viewportWidth - tooltip.offsetWidth - padding;
+                    }
+                    
+                    // Check top boundary - if tooltip goes off screen, position it below instead
+                    if (top < padding) {
+                        top = rect.bottom + padding;
+                    }
+                    // Check bottom boundary
+                    if (top + tooltip.offsetHeight > viewportHeight - padding) {
+                        top = viewportHeight - tooltip.offsetHeight - padding;
+                    }
+                    
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
                 };
                 
                 // Format and update last updated timestamp
@@ -551,6 +614,8 @@
                 updateElement('owletSignalValue', signalDisplay);
                 updateElement('owletO2AvgValue', o2AverageDisplay);
                 updateElement('owletSleepValue', sleepStateDisplay);
+                updateElement('owletTempValue', tempDisplay);
+                updateElement('owletMovementValue', movementDisplay);
                 updateElement('owletSockStatus', latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown');
                 
                 // Update colors for HR and O2 cards
@@ -579,8 +644,247 @@
                 // Add click handler for O2 Average invalid icon
                 const o2AvgInvalidIcon = document.getElementById('o2AvgInvalidIcon');
                 if (o2AvgInvalidIcon) {
-                    o2AvgInvalidIcon.addEventListener('click', () => {
-                        alert('owletist tuleb mingi pask');
+                    o2AvgInvalidIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Remove existing tooltip if any
+                        const existingTooltip = document.getElementById('o2TooltipPopover');
+                        if (existingTooltip) {
+                            existingTooltip.remove();
+                        }
+                        
+                        // Create tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'o2TooltipPopover';
+                        tooltip.style.cssText = `
+                            position: fixed;
+                            background: #1e293b;
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            z-index: 10000;
+                            pointer-events: auto;
+                            white-space: nowrap;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        `;
+                        tooltip.textContent = 'owlet api saadab mingit paska';
+                        document.body.appendChild(tooltip);
+                        
+                        // Position tooltip with viewport boundary checking
+                        tooltip.style.transition = 'opacity 5s ease-out';
+                        positionTooltipWithBounds(tooltip, o2AvgInvalidIcon);
+                        
+                        // Remove tooltip on click elsewhere
+                        const closeTooltip = () => {
+                            if (document.getElementById('o2TooltipPopover')) {
+                                document.getElementById('o2TooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                            clearTimeout(autoCloseTimer);
+                            clearTimeout(fadeOutTimer);
+                        };
+                        document.addEventListener('click', closeTooltip);
+                        
+                        // Start fade out after 5 seconds
+                        const fadeOutTimer = setTimeout(() => {
+                            if (document.getElementById('o2TooltipPopover')) {
+                                document.getElementById('o2TooltipPopover').style.opacity = '0';
+                            }
+                        }, 5000);
+                        
+                        // Remove tooltip after fade completes (5 more seconds)
+                        const autoCloseTimer = setTimeout(() => {
+                            if (document.getElementById('o2TooltipPopover')) {
+                                document.getElementById('o2TooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                        }, 10000);
+                    });
+                }
+                
+                // Add click handler for Temperature invalid icon
+                const tempInvalidIcon = document.getElementById('tempInvalidIcon');
+                if (tempInvalidIcon) {
+                    tempInvalidIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Remove existing tooltip if any
+                        const existingTooltip = document.getElementById('tempTooltipPopover');
+                        if (existingTooltip) {
+                            existingTooltip.remove();
+                        }
+                        
+                        // Create tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'tempTooltipPopover';
+                        tooltip.style.cssText = `
+                            position: fixed;
+                            background: #1e293b;
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            z-index: 10000;
+                            pointer-events: auto;
+                            white-space: normal;
+                            max-width: 200px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        `;
+                        tooltip.textContent = 'see tundub täiega off - probably miks seda official appis pole :D';
+                        document.body.appendChild(tooltip);
+                        
+                        // Position tooltip with viewport boundary checking
+                        tooltip.style.transition = 'opacity 5s ease-out';
+                        positionTooltipWithBounds(tooltip, tempInvalidIcon);
+                        
+                        // Remove tooltip on click elsewhere
+                        const closeTooltip = () => {
+                            if (document.getElementById('tempTooltipPopover')) {
+                                document.getElementById('tempTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                            clearTimeout(autoCloseTimer);
+                            clearTimeout(fadeOutTimer);
+                        };
+                        document.addEventListener('click', closeTooltip);
+                        
+                        // Start fade out after 5 seconds
+                        const fadeOutTimer = setTimeout(() => {
+                            if (document.getElementById('tempTooltipPopover')) {
+                                document.getElementById('tempTooltipPopover').style.opacity = '0';
+                            }
+                        }, 5000);
+                        
+                        // Remove tooltip after fade completes (5 more seconds)
+                        const autoCloseTimer = setTimeout(() => {
+                            if (document.getElementById('tempTooltipPopover')) {
+                                document.getElementById('tempTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                        }, 10000);
+                    });
+                }
+                
+                // Add click handler for Sleep Status icon
+                const sleepStatusIcon = document.getElementById('sleepStatusIcon');
+                if (sleepStatusIcon) {
+                    sleepStatusIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Remove existing tooltip if any
+                        const existingTooltip = document.getElementById('sleepTooltipPopover');
+                        if (existingTooltip) {
+                            existingTooltip.remove();
+                        }
+                        
+                        // Create tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'sleepTooltipPopover';
+                        tooltip.style.cssText = `
+                            position: fixed;
+                            background: #1e293b;
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            z-index: 10000;
+                            pointer-events: auto;
+                            white-space: normal;
+                            max-width: 200px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        `;
+                        tooltip.textContent = 'see tundub täiega umbes owleti enda mingi sita algo järgi';
+                        document.body.appendChild(tooltip);
+                        
+                        // Position tooltip with viewport boundary checking
+                        tooltip.style.transition = 'opacity 5s ease-out';
+                        positionTooltipWithBounds(tooltip, sleepStatusIcon);
+                        
+                        // Remove tooltip on click elsewhere
+                        const closeTooltip = () => {
+                            if (document.getElementById('sleepTooltipPopover')) {
+                                document.getElementById('sleepTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                            clearTimeout(autoCloseTimer);
+                            clearTimeout(fadeOutTimer);
+                        };
+                        document.addEventListener('click', closeTooltip);
+                        
+                        // Start fade out after 5 seconds
+                        const fadeOutTimer = setTimeout(() => {
+                            if (document.getElementById('sleepTooltipPopover')) {
+                                document.getElementById('sleepTooltipPopover').style.opacity = '0';
+                            }
+                        }, 3000);
+                        
+                        // Remove tooltip after fade completes (5 more seconds)
+                        const autoCloseTimer = setTimeout(() => {
+                            if (document.getElementById('sleepTooltipPopover')) {
+                                document.getElementById('sleepTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                        }, 10000);
+                    });
+                }
+                
+                // Add click handler for Movement invalid icon
+                const movementInvalidIcon = document.getElementById('movementInvalidIcon');
+                if (movementInvalidIcon) {
+                    movementInvalidIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Remove existing tooltip if any
+                        const existingTooltip = document.getElementById('movementTooltipPopover');
+                        if (existingTooltip) {
+                            existingTooltip.remove();
+                        }
+                        
+                        // Create tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'movementTooltipPopover';
+                        tooltip.style.cssText = `
+                            position: fixed;
+                            background: #1e293b;
+                            color: white;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            z-index: 10000;
+                            pointer-events: auto;
+                            white-space: normal;
+                            max-width: 200px;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        `;
+                        tooltip.textContent = '0-146? pole rohkem kätte saand:D jälle mingi owleti api lambinumber';
+                        document.body.appendChild(tooltip);
+                        
+                        // Position tooltip with viewport boundary checking
+                        tooltip.style.transition = 'opacity 5s ease-out';
+                        positionTooltipWithBounds(tooltip, movementInvalidIcon);
+                        
+                        // Remove tooltip on click elsewhere
+                        const closeTooltip = () => {
+                            if (document.getElementById('movementTooltipPopover')) {
+                                document.getElementById('movementTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                            clearTimeout(autoCloseTimer);
+                            clearTimeout(fadeOutTimer);
+                        };
+                        document.addEventListener('click', closeTooltip);
+                        
+                        // Start fade out after 5 seconds
+                        const fadeOutTimer = setTimeout(() => {
+                            if (document.getElementById('movementTooltipPopover')) {
+                                document.getElementById('movementTooltipPopover').style.opacity = '0';
+                            }
+                        }, 5000);
+                        
+                        // Remove tooltip after fade completes (5 more seconds)
+                        const autoCloseTimer = setTimeout(() => {
+                            if (document.getElementById('movementTooltipPopover')) {
+                                document.getElementById('movementTooltipPopover').remove();
+                            }
+                            document.removeEventListener('click', closeTooltip);
+                        }, 10000);
                     });
                 }
             } catch (error) {
