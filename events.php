@@ -173,6 +173,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         exit();
     }
     
+    // Check if requesting minute-by-minute data for a specific date
+    if (isset($_GET['minutes']) && isset($_GET['date'])) {
+        $requestedDate = $_GET['date'];
+        // Validate date format (YYYY-MM-DD)
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $requestedDate)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid date format. Use YYYY-MM-DD']);
+            exit();
+        }
+        
+        $minutesFile = 'owlet_minutes/owlet_minutes_' . $requestedDate . '.json';
+        if (!file_exists($minutesFile)) {
+            http_response_code(404);
+            echo json_encode(['error' => 'No minute data available for this date', 'date' => $requestedDate]);
+            exit();
+        }
+        
+        try {
+            $minutesData = file_get_contents($minutesFile);
+            $minutes = json_decode($minutesData, true);
+            if ($minutes === null) {
+                $minutes = [];
+            }
+            
+            echo json_encode([
+                'date' => $requestedDate,
+                'minutes' => $minutes,
+                'count' => count($minutes)
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to read minute data']);
+        }
+        exit();
+    }
+    
     // Handle request for latest real-time data
     if (isset($_GET['latest']) && $_GET['latest'] === 'true') {
         $latestFile = 'owlet_latest.json';

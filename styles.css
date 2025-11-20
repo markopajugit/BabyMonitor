@@ -960,3 +960,163 @@ body {
         font-size: 10px;
     }
 }
+
+/* Owlet View Styles */
+.owlet-container {
+    padding: 20px;
+    overflow-y: auto;
+    height: calc(100% - 60px);
+    box-sizing: border-box;
+}
+
+.owlet-status {
+    margin-bottom: 20px;
+}
+
+.btn-history {
+    margin-left: auto;
+}
+
+.history-icon {
+    font-size: 20px;
+}
+
+.owlet-history-content-wrapper {
+    padding: 0 20px 20px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.owlet-history-content {
+    /* Content styles handled by parent wrapper */
+}
+
+/* Timeline Legend and Daily Stats - Hidden by default */
+.timeline-legend {
+    display: none;
+}
+
+.daily-stats {
+    display: none;
+}
+
+.timeline-legend.show {
+    display: flex;
+}
+
+.daily-stats.show {
+    display: grid;
+}
+
+/* Form Input Classes */
+.form-select,
+.form-input,
+.form-textarea {
+    /* Styles already applied via .form-group select/input/textarea */
+}
+
+/* History Hourly Container Styles */
+.history-hourly-section {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.history-hourly-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.history-hourly-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.history-hourly-card {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 6px;
+    border-left: 3px solid #e2e8f0;
+}
+
+.history-hourly-card.has-data {
+    background: #f0f9ff;
+    border-left-color: #0ea5e9;
+}
+
+.history-hourly-card.no-data {
+    background: #f8fafc;
+    border-left-color: #e2e8f0;
+}
+
+.history-hourly-time {
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.history-hourly-values {
+    color: #475569;
+}
+
+.history-hourly-value {
+    /* Individual value styling */
+}
+
+/* Chart Styles */
+.history-charts-section {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.history-charts-title {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.history-chart-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    margin-bottom: 24px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.history-chart-container:last-child {
+    margin-bottom: 0;
+}
+
+.history-chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Mobile optimizations for charts */
+@media (max-width: 480px) {
+    .history-chart-container {
+        height: 220px;
+        padding: 8px;
+    }
+    
+    .history-charts-section {
+        padding: 12px;
+    }
+    
+    .history-charts-title {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+}

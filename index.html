@@ -36,41 +36,41 @@
     <!-- Main Grid -->
     <div class="grid-container" id="gridContainer">
         <!-- Row 1: Owlet Monitor, View Day -->
-        <button class="grid-btn btn-owlet" onclick="openOwletView()">
+        <button class="grid-btn btn-owlet" id="btnOwletMonitor" onclick="openOwletView()">
             <span class="icon">💓</span>
             <span>Owlet Monitor</span>
         </button>
-        <button class="grid-btn btn-view" onclick="openDayTimelineView()">
+        <button class="grid-btn btn-view" id="btnViewDay" onclick="openDayTimelineView()">
             <span class="icon">📅</span>
             <span>View Day</span>
         </button>
         
         <!-- Row 2: View Milestones/Events, Quick Diaper -->
-        <button class="grid-btn btn-milestone" onclick="openMilestonesView()">
+        <button class="grid-btn btn-milestone" id="btnViewMilestones" onclick="openMilestonesView()">
             <span class="icon">⭐</span>
             <span>View Milestones</span>
         </button>
-        <button class="grid-btn btn-diaper" onclick="quickEvent('Diaper', '🩱')">
+        <button class="grid-btn btn-diaper" id="btnQuickDiaper" onclick="quickEvent('Diaper', '🩱')">
             <span class="icon">🩱</span>
             <span>Quick Diaper</span>
         </button>
         
         <!-- Row 3: Feed Start, Feed End -->
-        <button class="grid-btn btn-feed" onclick="quickEvent('Feed Start', '🍼')">
+        <button class="grid-btn btn-feed" id="btnFeedStart" onclick="quickEvent('Feed Start', '🍼')">
             <span class="icon">🍼</span>
             <span>Feed Start</span>
         </button>
-        <button class="grid-btn btn-feed" onclick="quickEvent('Feed End', '🍼')">
+        <button class="grid-btn btn-feed" id="btnFeedEnd" onclick="quickEvent('Feed End', '🍼')">
             <span class="icon">🍼</span>
             <span>Feed End</span>
         </button>
         
         <!-- Row 4: Sleep Start, Sleep End -->
-        <button class="grid-btn btn-sleep" onclick="quickEvent('Sleep Start', '😴')">
+        <button class="grid-btn btn-sleep" id="btnSleepStart" onclick="quickEvent('Sleep Start', '😴')">
             <span class="icon">😴</span>
             <span>Sleep Start</span>
         </button>
-        <button class="grid-btn btn-sleep" onclick="quickEvent('Sleep End', '😴')">
+        <button class="grid-btn btn-sleep" id="btnSleepEnd" onclick="quickEvent('Sleep End', '😴')">
             <span class="icon">😴</span>
             <span>Sleep End</span>
         </button>
@@ -80,13 +80,13 @@
     <div class="modal" id="eventModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Add Event</h2>
-                <p>Record a new activity or milestone</p>
+                <h2 id="modalTitle">Add Event</h2>
+                <p id="modalSubtitle">Record a new activity or milestone</p>
             </div>
-            <form id="eventForm">
-                <div class="form-group">
+            <form id="eventForm" class="event-form">
+                <div class="form-group form-group-type">
                     <label for="eventType">Event Type</label>
-                    <select id="eventType" required>
+                    <select id="eventType" class="form-select" required>
                         <option value="">Select type...</option>
                         <option value="Feed Start">🍼 Feed Start</option>
                         <option value="Feed End">🍼 Feed End</option>
@@ -100,17 +100,17 @@
                         <option value="Other">📝 Other</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group form-group-time">
                     <label for="eventTime">Time</label>
-                    <input type="datetime-local" id="eventTime" required>
+                    <input type="datetime-local" id="eventTime" class="form-input" required>
                 </div>
-                <div class="form-group">
+                <div class="form-group form-group-notes">
                     <label for="eventNotes">Notes (optional)</label>
-                    <textarea id="eventNotes" placeholder="Add any additional details..."></textarea>
+                    <textarea id="eventNotes" class="form-textarea" placeholder="Add any additional details..."></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Event</button>
+                    <button type="button" class="btn btn-secondary" id="modalCancelBtn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Save Event</button>
                 </div>
             </form>
         </div>
@@ -119,13 +119,13 @@
     <!-- Events View -->
     <div class="events-view" id="eventsView">
         <div class="events-header">
-            <button class="back-btn" onclick="closeEventsView()">
+            <button class="back-btn" id="eventsBackBtn" onclick="closeEventsView()">
                 <span>←</span>
             </button>
-            <h2>Events History</h2>
+            <h2 id="eventsHeaderTitle">Events History</h2>
         </div>
         <div class="event-list" id="eventList">
-            <div class="empty-state">
+            <div class="empty-state" id="eventsEmptyState">
                 <div class="icon">📭</div>
                 <h3>No events yet</h3>
                 <p>Start tracking your baby's activities</p>
@@ -136,13 +136,13 @@
     <!-- Milestones View -->
     <div class="events-view" id="milestonesView">
         <div class="events-header">
-            <button class="back-btn" onclick="closeMilestonesView()">
+            <button class="back-btn" id="milestonesBackBtn" onclick="closeMilestonesView()">
                 <span>←</span>
             </button>
-            <h2>Milestones</h2>
+            <h2 id="milestonesHeaderTitle">Milestones</h2>
         </div>
         <div class="milestones-grid" id="milestonesGrid">
-            <div class="empty-state">
+            <div class="empty-state" id="milestonesEmptyState">
                 <div class="icon">⭐</div>
                 <h3>No milestones yet</h3>
                 <p>Record your baby's special moments</p>
@@ -153,17 +153,17 @@
     <!-- Owlet Monitor View -->
     <div class="events-view" id="owletView">
         <div class="events-header">
-            <button class="back-btn" onclick="closeOwletView()">
+            <button class="back-btn" id="owletBackBtn" onclick="closeOwletView()">
                 <span>←</span>
             </button>
-            <h2>Owlet Monitor</h2>
-            <button class="back-btn" style="margin-left: auto;" onclick="openOwletHistoryView()" title="View historical data">
-                <span style="font-size: 20px;">📊</span>
+            <h2 id="owletHeaderTitle">Owlet Monitor</h2>
+            <button class="back-btn btn-history" id="owletHistoryBtn" onclick="openOwletHistoryView()" title="View historical data">
+                <span class="history-icon">📊</span>
             </button>
         </div>
-        <div style="padding: 20px; overflow-y: auto; height: calc(100% - 60px); box-sizing: border-box;" id="owletContainer">
-            <div id="owletStatus" style="margin-bottom: 20px;">
-                <div class="empty-state">
+        <div class="owlet-container" id="owletContainer">
+            <div class="owlet-status" id="owletStatus">
+                <div class="empty-state" id="owletEmptyState">
                     <div class="icon">💓</div>
                     <h3>Loading Owlet data...</h3>
                     <p>Please wait while we fetch your baby's vitals</p>
@@ -175,14 +175,19 @@
     <!-- Owlet History View -->
     <div class="events-view" id="owletHistoryView">
         <div class="events-header">
-            <button class="back-btn" onclick="closeOwletHistoryView()">
+            <button class="back-btn" id="owletHistoryBackBtn" onclick="closeOwletHistoryView()">
                 <span>←</span>
             </button>
-            <h2>Owlet History</h2>
+            <h2 id="owletHistoryHeaderTitle">Owlet History</h2>
         </div>
-        <div style="padding: 0 20px 20px 20px; overflow-y: auto; flex: 1;">
-            <div id="owletHistoryContent">
-                <div class="empty-state">
+        <div class="timeline-header">
+            <button class="date-nav-btn" id="historyDateNavPrev" onclick="navigateHistoryDate(-1)">←</button>
+            <div class="current-date" id="historyCurrentDate">Today</div>
+            <button class="date-nav-btn" id="historyDateNavNext" onclick="navigateHistoryDate(1)">→</button>
+        </div>
+        <div class="owlet-history-content-wrapper">
+            <div class="owlet-history-content" id="owletHistoryContent">
+                <div class="empty-state" id="owletHistoryEmptyState">
                     <div class="icon">📊</div>
                     <h3>Loading history...</h3>
                     <p>Please wait while we process your data</p>
@@ -194,25 +199,25 @@
     <!-- Day Timeline View -->
     <div class="events-view" id="dayTimelineView">
         <div class="events-header">
-            <button class="back-btn" onclick="closeDayTimelineView()">
+            <button class="back-btn" id="dayTimelineBackBtn" onclick="closeDayTimelineView()">
                 <span>←</span>
             </button>
-            <h2>Day Timeline</h2>
+            <h2 id="dayTimelineHeaderTitle">Day Timeline</h2>
         </div>
         <div class="timeline-container">
             <div class="timeline-header">
-                <button class="date-nav-btn" onclick="navigateDate(-1)">←</button>
+                <button class="date-nav-btn" id="dateNavPrev" onclick="navigateDate(-1)">←</button>
                 <div class="current-date" id="currentDate">Today</div>
-                <button class="date-nav-btn" onclick="navigateDate(1)">→</button>
+                <button class="date-nav-btn" id="dateNavNext" onclick="navigateDate(1)">→</button>
             </div>
             <div class="timeline" id="timeline">
-                <div class="no-events-timeline">
+                <div class="no-events-timeline" id="timelineEmptyState">
                     <div class="icon">📅</div>
                     <h3>No events for this day</h3>
                     <p>Add events to see them on the timeline</p>
                 </div>
             </div>
-            <div class="timeline-legend" id="timelineLegend" style="display: none;">
+            <div class="timeline-legend" id="timelineLegend">
                 <div class="legend-item">
                     <div class="legend-color sleep"></div>
                     <span>Sleep Period</span>
@@ -222,29 +227,29 @@
                     <span>Feed Period</span>
                 </div>
             </div>
-            <div class="daily-stats" id="dailyStats" style="display: none;">
-                <div class="stat-item">
+            <div class="daily-stats" id="dailyStats">
+                <div class="stat-item stat-sleep">
                     <div class="stat-icon sleep">😴</div>
                     <div class="stat-details">
                         <div class="stat-duration" id="sleepDuration">0h 0m</div>
                         <div class="stat-label">Sleep</div>
                     </div>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item stat-feed">
                     <div class="stat-icon feed">🍼</div>
                     <div class="stat-details">
                         <div class="stat-duration" id="feedDuration">0h 0m</div>
                         <div class="stat-label">Feeding</div>
                     </div>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item stat-diaper">
                     <div class="stat-icon diaper">🩱</div>
                     <div class="stat-details">
                         <div class="stat-duration" id="diaperCount">0</div>
                         <div class="stat-label">Diapers</div>
                     </div>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item stat-other">
                     <div class="stat-icon other">📝</div>
                     <div class="stat-details">
                         <div class="stat-duration" id="totalEvents">0</div>
@@ -273,6 +278,8 @@
     <!-- Toast Notification -->
     <div class="toast" id="toast"></div>
 
+    <!-- Chart.js for HR and O2 charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="app.js?v=1.3"></script>
 </body>
 </html>

@@ -596,9 +596,27 @@
                 clearInterval(owletHistoryAutoRefreshInterval);
                 owletHistoryAutoRefreshInterval = null;
             }
+            // Clean up charts
+            if (hrChartInstance) {
+                hrChartInstance.destroy();
+                hrChartInstance = null;
+            }
+            if (o2ChartInstance) {
+                o2ChartInstance.destroy();
+                o2ChartInstance = null;
+            }
         }
         
         function navigateHistoryDate(direction) {
+            // Clean up existing charts before loading new data
+            if (hrChartInstance) {
+                hrChartInstance.destroy();
+                hrChartInstance = null;
+            }
+            if (o2ChartInstance) {
+                o2ChartInstance.destroy();
+                o2ChartInstance = null;
+            }
             currentHistoryDate.setDate(currentHistoryDate.getDate() + direction);
             updateHistoryDate();
             loadOwletHistory();
@@ -642,6 +660,277 @@
             }, false);
         }
         
+        // Chart instances storage
+        let hrChartInstance = null;
+        let o2ChartInstance = null;
+        
+        async function loadAndRenderCharts(dateStr) {
+            try {
+                // Fetch minute-by-minute data for the selected date
+                const response = await fetch(`events.php?minutes=true&date=${dateStr}`);
+                if (!response.ok) {
+                    console.warn('Failed to fetch minute data for charts');
+                    return;
+                }
+                
+                const data = await response.json();
+                if (!data.minutes || data.minutes.length === 0) {
+                    console.warn('No minute data available for charts');
+                    return;
+                }
+                
+                // Process minute data for charts
+                const chartData = processMinuteDataForCharts(data.minutes);
+                
+                // Render HR chart
+                renderHRChart(chartData);
+                
+                // Render O2 chart
+                renderO2Chart(chartData);
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+        
+        function processMinuteDataForCharts(minutes) {
+            const labels = [];
+            const hrData = [];
+            const o2Data = [];
+            
+            // Determine label frequency based on data length
+            // For a full day (1440 minutes), show labels every 2 hours
+            // For shorter periods, show labels more frequently
+            const totalMinutes = minutes.length;
+            let labelInterval = 120; // Default: every 2 hours (120 minutes)
+            if (totalMinutes < 720) {
+                labelInterval = 60; // Every hour if less than 12 hours
+            }
+            if (totalMinutes < 360) {
+                labelInterval = 30; // Every 30 minutes if less than 6 hours
+            }
+            
+            minutes.forEach((minute, index) => {
+                const timestamp = new Date(minute.timestamp);
+                // Format time as HH:MM for display
+                const timeLabel = `${String(timestamp.getHours()).padStart(2, '0')}:${String(timestamp.getMinutes()).padStart(2, '0')}`;
+                
+                // Show label at start, end, and at regular intervals
+                if (index === 0 || index === minutes.length - 1 || index % labelInterval === 0) {
+                    labels.push(timeLabel);
+                } else {
+                    labels.push('');
+                }
+                
+                hrData.push(minute.heart_rate_avg !== null && minute.heart_rate_avg !== undefined ? minute.heart_rate_avg : null);
+                o2Data.push(minute.oxygen_saturation_avg !== null && minute.oxygen_saturation_avg !== undefined ? minute.oxygen_saturation_avg : null);
+            });
+            
+            return { labels, hrData, o2Data };
+        }
+        
+        function renderHRChart(chartData) {
+            const canvas = document.getElementById('hrChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (hrChartInstance) {
+                hrChartInstance.destroy();
+            }
+            
+            hrChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Heart Rate (bpm)',
+                        data: chartData.hrData,
+                        borderColor: '#ec4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        spanGaps: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#1e293b'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 10,
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 11
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                },
+                                color: '#64748b',
+                                maxTicksLimit: 12
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Heart Rate (bpm)',
+                                font: {
+                                    size: 11
+                                },
+                                color: '#64748b'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                },
+                                color: '#64748b'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
+        function renderO2Chart(chartData) {
+            const canvas = document.getElementById('o2Chart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (o2ChartInstance) {
+                o2ChartInstance.destroy();
+            }
+            
+            o2ChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Oxygen Saturation (%)',
+                        data: chartData.o2Data,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        spanGaps: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#1e293b'
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 10,
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 11
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                },
+                                color: '#64748b',
+                                maxTicksLimit: 12
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Oxygen (%)',
+                                font: {
+                                    size: 11
+                                },
+                                color: '#64748b'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                },
+                                color: '#64748b',
+                                stepSize: 1
+                            },
+                            min: 90,
+                            max: 100
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
         async function loadOwletHistory() {
             const contentDiv = document.getElementById('owletHistoryContent');
             try {
@@ -656,8 +945,8 @@
                     contentDiv.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📭</div>
-                            <h3>No Historical Data</h3>
-                            <p>Daily summaries will appear here as they're created</p>
+                            <h3 class="empty-state-title">No Historical Data</h3>
+                            <p class="empty-state-message">Daily summaries will appear here as they're created</p>
                         </div>
                     `;
                     return;
@@ -687,8 +976,8 @@
                     contentDiv.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📭</div>
-                            <h3>No Data for Selected Date</h3>
-                            <p>No historical data available for this date</p>
+                            <h3 class="empty-state-title">No Data for Selected Date</h3>
+                            <p class="empty-state-message">No historical data available for this date</p>
                         </div>
                     `;
                     return;
@@ -704,8 +993,8 @@
                     contentDiv.innerHTML = `
                         <div class="empty-state">
                             <div class="icon">📅</div>
-                            <h3>No Summary Available</h3>
-                            <p>No summary data available for ${formattedDate}</p>
+                            <h3 class="empty-state-title">No Summary Available</h3>
+                            <p class="empty-state-message">No summary data available for ${formattedDate}</p>
                         </div>
                     `;
                     return;
@@ -814,60 +1103,61 @@
                 const hourlyAverages = todaySummary.hourly.map((hour, index) => {
                     // Format time display based on whether we're viewing today or a past day
                     let timeDisplay;
+                    const hourFormat = `${String(index).padStart(2, '0')}:00`;
                     
                     if (isToday) {
                         // For today's view: show date + hour for hours > currentHour (yesterday), just hour for hours <= currentHour (today)
                         const isYesterday = index > currentHour;
                         if (isYesterday) {
-                            timeDisplay = `${yesterdayDateStr}, ${String(index).padStart(2, '0')}`;
+                            timeDisplay = `${yesterdayDateStr}, ${hourFormat}`;
                         } else {
-                            timeDisplay = String(index).padStart(2, '0');
+                            timeDisplay = hourFormat;
                         }
                     } else {
                         // For past day's view: show all hours starting from 00
-                        timeDisplay = String(index).padStart(2, '0');
+                        timeDisplay = hourFormat;
                     }
+                    
+                    const hrAvg = hour.heart_rate?.avg;
+                    const o2Avg = hour.oxygen_saturation?.avg;
                     
                     return {
                         time: timeDisplay,
-                        avgHR: hour.heart_rate?.avg !== null ? hour.heart_rate?.avg.toFixed(0) : 'N/A',
-                        avgO2: hour.oxygen_saturation?.avg !== null ? hour.oxygen_saturation?.avg.toFixed(1) : 'N/A',
+                        avgHR: (hrAvg != null && typeof hrAvg === 'number') ? hrAvg.toFixed(0) : 'N/A',
+                        avgO2: (o2Avg != null && typeof o2Avg === 'number') ? o2Avg.toFixed(1) : 'N/A',
                         hasData: hour.data_points > 0
                     };
                 });
                 
                 // Always render the full content
                 contentDiv.innerHTML = `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                            <div style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
-                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Heart Rate</div>
-                                <div id="historyAvgHR" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
-                                <div style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinHR">${minHR}</span> | Max: <span id="historyMaxHR">${maxHR}</span></div>
+                        <div class="history-stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div class="history-stat-card history-stat-card-heartrate" style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
+                                <div class="history-stat-label" style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Heart Rate</div>
+                                <div id="historyAvgHR" class="history-stat-value" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
+                                <div class="history-stat-minmax" style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinHR" class="history-stat-min">${minHR}</span> | Max: <span id="historyMaxHR" class="history-stat-max">${maxHR}</span></div>
                             </div>
                             
-                            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
-                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Oxygen Level</div>
-                                <div id="historyAvgO2" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
-                                <div style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinO2">${minO2}</span>% | Max: <span id="historyMaxO2">${maxO2}</span>%</div>
+                            <div class="history-stat-card history-stat-card-oxygen" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
+                                <div class="history-stat-label" style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Oxygen Level</div>
+                                <div id="historyAvgO2" class="history-stat-value" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
+                                <div class="history-stat-minmax" style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinO2" class="history-stat-min">${minO2}</span>% | Max: <span id="historyMaxO2" class="history-stat-max">${maxO2}</span>%</div>
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                            <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0f9ff;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Daily Avg Temperature</div>
-                                <div id="historyAvgTemp" style="font-size: 24px; font-weight: 600; color: #1e293b;">${avgTemp}°C</div>
+                        <div class="history-charts-section">
+                            <h3 class="history-charts-title">Daily Charts</h3>
+                            <div class="history-chart-container">
+                                <canvas id="hrChart" class="history-chart"></canvas>
                             </div>
-                            
-                            <div style="background: white; border-radius: 12px; padding: 16px; border: 2px solid #f0fdf4;">
-                                <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Daily Sleep Time</div>
-                                <div id="historySleepTime" style="font-size: 24px; font-weight: 600; color: #1e293b;">${sleepTimeDisplay}</div>
-                                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${sleepPercentage}% asleep</div>
+                            <div class="history-chart-container">
+                                <canvas id="o2Chart" class="history-chart"></canvas>
                             </div>
                         </div>
                         
-                        <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
-                            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">Hourly Averages (Past 24h)</h3>
-                            <div id="historyHourlyContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                        <div class="history-hourly-section">
+                            <h3 class="history-hourly-title">Hourly Averages (Past 24h)</h3>
+                            <div id="historyHourlyContainer" class="history-hourly-container">
                             </div>
                         </div>
                     `;
@@ -884,29 +1174,30 @@
                 updateElement('historyAvgO2', avgO2 + '%');
                 updateElement('historyMinO2', minO2);
                 updateElement('historyMaxO2', maxO2);
-                updateElement('historyAvgTemp', avgTemp + '°C');
-                updateElement('historySleepTime', sleepTimeDisplay);
                 
                 // Update hourly averages
                 const hourlyContainer = document.getElementById('historyHourlyContainer');
                 if (hourlyContainer) {
-                    hourlyContainer.innerHTML = hourlyAverages.map(hour => `
-                        <div style="display: flex; flex-direction: column; padding: 8px; background: ${hour.hasData ? '#f0f9ff' : '#f8fafc'}; border-radius: 6px; border-left: 3px solid ${hour.hasData ? '#0ea5e9' : '#e2e8f0'};">
-                            <span style="color: #64748b; font-weight: 600; margin-bottom: 4px;">${hour.time}</span>
-                            <div style="color: #475569;">
-                                <div><strong>HR:</strong> ${hour.avgHR}</div>
-                                <div><strong>O2:</strong> ${hour.avgO2}%</div>
+                    hourlyContainer.innerHTML = hourlyAverages.map((hour, index) => `
+                        <div class="history-hourly-card ${hour.hasData ? 'has-data' : 'no-data'}" data-hour-index="${index}">
+                            <span class="history-hourly-time">${hour.time}</span>
+                            <div class="history-hourly-values">
+                                <div class="history-hourly-value"><strong>HR:</strong> ${hour.avgHR}</div>
+                                <div class="history-hourly-value"><strong>O2:</strong> ${hour.avgO2}%</div>
                             </div>
                         </div>
                     `).join('');
                 }
+                
+                // Load and render charts
+                await loadAndRenderCharts(selectedDateStr);
             } catch (error) {
                 console.error('Error loading history:', error);
                 contentDiv.innerHTML = `
                     <div class="empty-state">
                         <div class="icon">❌</div>
-                        <h3>Error Loading History</h3>
-                        <p>${error.message}</p>
+                        <h3 class="empty-state-title">Error Loading History</h3>
+                        <p class="empty-state-message">${error.message}</p>
                     </div>
                 `;
             }
@@ -1177,15 +1468,15 @@
                         <p>Add events to see them on the timeline</p>
                     </div>
                 `;
-                legend.style.display = 'none';
-                document.getElementById('dailyStats').style.display = 'none';
+                legend.classList.remove('show');
+                document.getElementById('dailyStats').classList.remove('show');
                 renderDayEventList([]);
                 return;
             }
 
             // Show legend and stats
-            legend.style.display = 'flex';
-            document.getElementById('dailyStats').style.display = 'grid';
+            legend.classList.add('show');
+            document.getElementById('dailyStats').classList.add('show');
 
             // Create horizontal timeline structure
             let timelineHTML = '<div class="timeline-horizontal">';
