@@ -1920,13 +1920,13 @@
                 // Always render the full content
                 contentDiv.innerHTML = `
                         <div class="history-stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                            <div class="history-stat-card history-stat-card-heartrate" style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 16px; color: white;">
+                            <div class="history-stat-card history-stat-card-heartrate" style="background: linear-gradient(135deg, #ec4899, #db2777); border-radius: 12px; padding: 10px; color: white;">
                                 <div class="history-stat-label" style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Heart Rate</div>
                                 <div id="historyAvgHR" class="history-stat-value" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgHR}</div>
                                 <div class="history-stat-minmax" style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinHR" class="history-stat-min">${minHR}</span> | Max: <span id="historyMaxHR" class="history-stat-max">${maxHR}</span></div>
                             </div>
                             
-                            <div class="history-stat-card history-stat-card-oxygen" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 16px; color: white;">
+                            <div class="history-stat-card history-stat-card-oxygen" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 12px; padding: 10px; color: white;">
                                 <div class="history-stat-label" style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">Daily Avg Oxygen Level</div>
                                 <div id="historyAvgO2" class="history-stat-value" style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">${avgO2}%</div>
                                 <div class="history-stat-minmax" style="font-size: 11px; opacity: 0.8;">Min: <span id="historyMinO2" class="history-stat-min">${minO2}</span>% | Max: <span id="historyMaxO2" class="history-stat-max">${maxO2}</span>%</div>
