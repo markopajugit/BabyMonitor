@@ -2267,7 +2267,7 @@
                         backgroundColor: 'rgba(139, 92, 246, 0.8)',
                         borderColor: 'rgba(139, 92, 246, 1)',
                         borderWidth: 1,
-                        borderRadius: 6,
+                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
                         barPercentage: 0.7,
                         categoryPercentage: 0.8
                     },
@@ -2277,7 +2277,7 @@
                         backgroundColor: 'rgba(236, 72, 153, 0.8)',
                         borderColor: 'rgba(236, 72, 153, 1)',
                         borderWidth: 1,
-                        borderRadius: 6,
+                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
                         barPercentage: 0.7,
                         categoryPercentage: 0.8
                     },
@@ -2287,7 +2287,7 @@
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgba(59, 130, 246, 1)',
                         borderWidth: 1,
-                        borderRadius: 6,
+                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
                         barPercentage: 0.7,
                         categoryPercentage: 0.8
                     },
@@ -2297,7 +2297,7 @@
                         backgroundColor: 'rgba(251, 191, 36, 0.8)',
                         borderColor: 'rgba(251, 191, 36, 1)',
                         borderWidth: 1,
-                        borderRadius: 6,
+                        borderRadius: {topLeft: 6, bottomLeft: 6, topRight: 0, bottomRight: 0},
                         barPercentage: 0.7,
                         categoryPercentage: 0.8
                     }
