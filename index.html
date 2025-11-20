@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json?v=1.1">
+    <link rel="manifest" href="manifest.json?v=1.3">
     
     <title>Baby Monitor</title>
     <link rel="stylesheet" href="styles.css">
@@ -175,19 +175,12 @@
             </button>
             <h2>Owlet History</h2>
         </div>
-        <div class="timeline-container">
-            <div class="timeline-header">
-                <button class="date-nav-btn" onclick="navigateHistoryDate(-1)">←</button>
-                <div class="current-date" id="historyCurrentDate">Today</div>
-                <button class="date-nav-btn" onclick="navigateHistoryDate(1)">→</button>
-            </div>
-            <div style="padding: 0 20px 20px 20px; overflow-y: auto; flex: 1;">
-                <div id="owletHistoryContent">
-                    <div class="empty-state">
-                        <div class="icon">📊</div>
-                        <h3>Loading history...</h3>
-                        <p>Please wait while we process your data</p>
-                    </div>
+        <div style="padding: 0 20px 20px 20px; overflow-y: auto; flex: 1;">
+            <div id="owletHistoryContent">
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h3>Loading history...</h3>
+                    <p>Please wait while we process your data</p>
                 </div>
             </div>
         </div>

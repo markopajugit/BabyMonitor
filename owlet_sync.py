@@ -489,6 +489,7 @@ class OwletSyncService:
         """
         Check if yesterday's summary exists. If yes, keep it.
         If no, create yesterday's summary from minute data.
+        Also check for any other dates with minute data but no summaries and generate them.
         """
         try:
             current_time = self.get_local_time()
@@ -505,9 +506,77 @@ class OwletSyncService:
                     summary = self.aggregate_vitals_to_summary(yesterday)
                     if summary:
                         self.save_daily_summary(summary, yesterday)
+                        logger.info(f"Generated summary for yesterday ({yesterday.isoformat()})")
+            
+            # Also check for any other dates with minute data but no summaries
+            # This catches up on any missing summaries (e.g., if service was down)
+            self.generate_missing_summaries()
             
         except Exception as e:
             logger.error(f"Error during daily cleanup: {e}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+    
+    def generate_missing_summaries(self, max_days=30):
+        """
+        Generate summaries for all dates that have minute data but no summary.
+        This ensures we catch up on any missing summaries automatically.
+        
+        Args:
+            max_days: Maximum number of days to check back (default: 30)
+        """
+        try:
+            minutes_dir = Path(self.minutes_dir)
+            summaries_dir = Path(self.daily_summaries_dir)
+            
+            if not minutes_dir.exists():
+                return
+            
+            # Get all minute files
+            minute_files = list(minutes_dir.glob('owlet_minutes_*.json'))
+            
+            if not minute_files:
+                return
+            
+            generated_count = 0
+            
+            for minute_file in minute_files:
+                # Extract date from filename (format: owlet_minutes_YYYY-MM-DD.json)
+                try:
+                    date_str = minute_file.stem.replace('owlet_minutes_', '')
+                    date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    logger.warning(f"Could not parse date from filename: {minute_file.name}")
+                    continue
+                
+                # Skip if too old (optional limit)
+                current_time = self.get_local_time()
+                days_ago = (current_time.date() - date).days
+                if days_ago > max_days:
+                    continue
+                
+                # Check if summary already exists
+                summary_file = summaries_dir / f"owlet_summary_{date.isoformat()}.json"
+                if summary_file.exists():
+                    continue
+                
+                # Generate summary
+                summary = self.aggregate_vitals_to_summary(date)
+                
+                if summary:
+                    if self.save_daily_summary(summary, date):
+                        generated_count += 1
+                        logger.info(f"Generated missing summary for {date.isoformat()}")
+                    else:
+                        logger.warning(f"Failed to save summary for {date.isoformat()}")
+                else:
+                    logger.debug(f"No data to generate summary for {date.isoformat()}")
+            
+            if generated_count > 0:
+                logger.info(f"Generated {generated_count} missing summary file(s) during cleanup")
+            
+        except Exception as e:
+            logger.error(f"Error generating missing summaries: {e}")
             import traceback
             logger.error(f"Full traceback: {traceback.format_exc()}")
     
