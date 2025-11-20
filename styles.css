@@ -1322,7 +1322,7 @@ body {
 .history-stat-minmax {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    gap: 2px;
 }
 
 /* Form Input Classes */
