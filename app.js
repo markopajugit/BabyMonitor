@@ -1,5 +1,5 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.5';
+        const APP_VERSION = '1.7.6';
 
         // Register Chart.js zoom plugin with retry logic
         let attempts = 0;
@@ -2321,8 +2321,7 @@
                                 display: false
                             },
                             ticks: {
-                                font: { size: 12, weight: 500 },
-                                color: '#475569'
+                                display: false
                             },
                             border: { display: false },
                             stacked: true
@@ -2491,16 +2490,16 @@
                 };
                 
                 if (event.category === 'sleep') {
-                    dataPoint.y = 'Sleep';
+                    dataPoint.y = '';
                     sleepData.push(dataPoint);
                 } else if (event.category === 'feed') {
-                    dataPoint.y = 'Feed';
+                    dataPoint.y = '';
                     feedData.push(dataPoint);
                 } else if (event.category === 'diaper') {
-                    dataPoint.y = 'Diaper';
+                    dataPoint.y = '';
                     diaperData.push(dataPoint);
                 } else {
-                    dataPoint.y = 'Other';
+                    dataPoint.y = '';
                     otherData.push(dataPoint);
                 }
             });
