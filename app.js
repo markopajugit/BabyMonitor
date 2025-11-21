@@ -1,5 +1,5 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.2';
+        const APP_VERSION = '1.7.3';
 
         const ICONS = {
             'Feed': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
