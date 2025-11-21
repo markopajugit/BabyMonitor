@@ -1,5 +1,5 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.6';
+        const APP_VERSION = '1.7.5';
 
         // Register Chart.js zoom plugin with retry logic
         let attempts = 0;
@@ -2292,6 +2292,41 @@
                         },
                         tooltip: {
                             enabled: false
+                        },
+                        // Plugin to render icons instead of text labels on Y-axis
+                        timelineIconLabels: {
+                            id: 'timelineIconLabels',
+                            afterDatasetsDraw(chart) {
+                                const yScale = chart.scales.y;
+                                const ctx = chart.ctx;
+                                
+                                // Icon mappings with base64 or image data
+                                const iconMap = {
+                                    'Sleep': 'sleep.png',
+                                    'Feed': 'feed.png',
+                                    'Diaper': 'sock.png',
+                                    'Other': null // No icon for Other yet
+                                };
+                                
+                                yScale.ticks.forEach((tick, index) => {
+                                    const label = tick.label;
+                                    const iconPath = iconMap[label];
+                                    if (!iconPath) return;
+                                    
+                                    const y = yScale.getPixelForTick(index);
+                                    const x = yScale.left - 30; // Position to the left of chart
+                                    
+                                    // Draw the icon as an image
+                                    const img = new Image();
+                                    img.src = iconPath;
+                                    img.onload = function() {
+                                        ctx.save();
+                                        ctx.filter = 'invert(0.15)';
+                                        ctx.drawImage(img, x - 12, y - 12, 24, 24);
+                                        ctx.restore();
+                                    };
+                                });
+                            }
                         }
                     },
                     scales: {
@@ -2321,7 +2356,12 @@
                                 display: false
                             },
                             ticks: {
-                                display: false
+                                callback: function(value) {
+                                    // Return empty string to hide text labels on Y-axis
+                                    return '';
+                                },
+                                font: { size: 12, weight: 500 },
+                                color: '#475569'
                             },
                             border: { display: false },
                             stacked: true
@@ -2490,16 +2530,16 @@
                 };
                 
                 if (event.category === 'sleep') {
-                    dataPoint.y = '';
+                    dataPoint.y = 'Sleep';
                     sleepData.push(dataPoint);
                 } else if (event.category === 'feed') {
-                    dataPoint.y = '';
+                    dataPoint.y = 'Feed';
                     feedData.push(dataPoint);
                 } else if (event.category === 'diaper') {
-                    dataPoint.y = '';
+                    dataPoint.y = 'Diaper';
                     diaperData.push(dataPoint);
                 } else {
-                    dataPoint.y = '';
+                    dataPoint.y = 'Other';
                     otherData.push(dataPoint);
                 }
             });
