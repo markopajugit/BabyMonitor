@@ -49,3 +49,4 @@ ENV/
 *.swp
 *.swo
 
+events.json
