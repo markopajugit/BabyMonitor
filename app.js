@@ -30,36 +30,36 @@
         }, 100);
 
         const ICONS = {
-            'Feed': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Feed Start': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Feed End': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep Start': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep End': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Diaper': '<img src="134996.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Medicine': '<img src="134996.png" alt="Medicine Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Bath': '<img src="134996.png" alt="Bath Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Doctor': '<img src="134996.png" alt="Doctor Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed Start': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed End': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep Start': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep End': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Diaper': '<img src="sock.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Medicine': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
+            'Bath': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>',
+            'Doctor': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>',
             'Milestone': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 10.26 23.77 10.5 17.91 16.01 20.16 24.92 12 20.13 3.84 24.92 6.09 16.01 0.22 10.5 8.91 10.26 12 2"></polygon></svg>',
-            'Other': '<img src="134996.png" alt="Other Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'default': '<img src="134996.png" alt="Event Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">'
+            'Other': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
+            'default': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8m-4-4h8"></path></svg>'
         };
         
         // Image icons for timeline view (inverted to white)
         const IMAGES = {
-            'Feed Start': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Feed End': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Feed': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep Start': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep End': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep': '<img src="263806.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Diaper': '<img src="134996.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Medicine': '<img src="134996.png" alt="Medicine Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Bath': '<img src="134996.png" alt="Bath Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Doctor': '<img src="134996.png" alt="Doctor Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed Start': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed End': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Feed': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep Start': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep End': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Diaper': '<img src="sock.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Medicine': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
+            'Bath': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>',
+            'Doctor': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>',
             'Milestone': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 10.26 23.77 10.5 17.91 16.01 20.16 24.92 12 20.13 3.84 24.92 6.09 16.01 0.22 10.5 8.91 10.26 12 2"></polygon></svg>',
-            'Other': '<img src="134996.png" alt="Other Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'default': '<img src="134996.png" alt="Event Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">'
+            'Other': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
+            'default': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8m-4-4h8"></path></svg>'
         };
         
         // Initialize events array
@@ -661,17 +661,20 @@
                 }
                 updateElement('owletLastUpdated', lastUpdatedText);
                 
-                updateElement('owletHRValue', heartRateDisplay);
-                updateElement('owletO2Value', o2Display);
-                updateElement('owletBatteryValue', batteryDisplay);
-                updateElement('owletBatteryMinutes', `${batteryMinutesDisplay} remaining`);
-                updateElement('owletTempValue', tempDisplay);
-                updateElement('owletMovementValue', movementDisplay);
-                updateElement('owletSignalValue', signalDisplay);
-                updateElement('owletO2AvgValue', o2AverageDisplay);
-                updateElement('owletSleepValue', sleepStateDisplay);
-                updateElement('owletTempValue', tempDisplay);
-                updateElement('owletMovementValue', movementDisplay);
+                // Only update vital values if sock is connected
+                // If sock is disconnected, keep showing the last valid reading
+                if (latest_reading.sock_connected === true) {
+                    updateElement('owletHRValue', heartRateDisplay);
+                    updateElement('owletO2Value', o2Display);
+                    updateElement('owletBatteryValue', batteryDisplay);
+                    updateElement('owletBatteryMinutes', `${batteryMinutesDisplay} remaining`);
+                    updateElement('owletTempValue', tempDisplay);
+                    updateElement('owletMovementValue', movementDisplay);
+                    updateElement('owletSignalValue', signalDisplay);
+                    updateElement('owletO2AvgValue', o2AverageDisplay);
+                    updateElement('owletSleepValue', sleepStateDisplay);
+                }
+                
                 updateElement('owletSockStatus', latest_reading.sock_connected === true ? '✓ Yes' : latest_reading.sock_connected === false ? '✗ No' : '? Unknown');
                 
                 // Update colors for HR and O2 cards
@@ -687,6 +690,25 @@
                 if (o2Value) o2Value.style.color = o2Status === 'green' ? '#10b981' : o2Status === 'red' ? '#ef4444' : '#64748b';
                 if (sockStatus) sockStatus.style.color = latest_reading.sock_connected === true ? '#10b981' : '#ef4444';
                 
+                // Gray out vital cards if sock is disconnected to indicate they're not being updated
+                if (latest_reading.sock_connected === false) {
+                    [hrCard, o2Card].forEach(card => {
+                        if (card) {
+                            card.style.opacity = '0.5';
+                            card.style.cursor = 'help';
+                            card.title = 'Sock disconnected - showing last valid reading';
+                        }
+                    });
+                } else {
+                    [hrCard, o2Card].forEach(card => {
+                        if (card) {
+                            card.style.opacity = '1';
+                            card.style.cursor = 'auto';
+                            card.title = '';
+                        }
+                    });
+                }
+                
                 // Update alerts
                 const alertsDiv = document.getElementById('owletAlerts');
                 if (alertsDiv) {
@@ -694,6 +716,7 @@
                     if (latest_reading.low_oxygen === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Low Oxygen Alert</strong></div>';
                     if (latest_reading.high_heart_rate === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ High Heart Rate Alert</strong></div>';
                     if (latest_reading.low_battery === true) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>🔋 Low Battery Alert</strong></div>';
+                    if (latest_reading.sock_connected === false) alertsHTML += '<div style="font-size: 12px; color: #ef4444; margin-top: 4px;"><strong>⚠ Sock Disconnected - Showing Last Valid Reading</strong></div>';
                     alertsDiv.innerHTML = alertsHTML;
                 }
                 
