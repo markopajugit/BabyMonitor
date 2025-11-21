@@ -1052,7 +1052,6 @@
         // Chart instances storage
         let hrChartInstance = null;
         let o2ChartInstance = null;
-        let combinedChartInstance = null;
         let timelineChartInstance = null;
         
         async function loadAndRenderCharts(dateStr) {
@@ -1122,8 +1121,6 @@
                     container = containers[0];
                 } else if (chartId === 'o2Chart' && containers.length >= 2) {
                     container = containers[1];
-                } else if (chartId === 'combinedChart' && containers.length >= 3) {
-                    container = containers[2];
                 }
             }
             
@@ -1137,6 +1134,40 @@
                 </div>
             `;
         }
+        
+        // Plugin to auto-hide tooltips after 5 seconds
+        const createTooltipAutoHidePlugin = () => {
+            let tooltipTimer = null;
+            let lastShowTime = 0;
+            return {
+                id: 'tooltipAutoHide',
+                afterEvent(chart, args) {
+                    const tooltip = chart.tooltip;
+                    
+                    // If tooltip is active
+                    if (tooltip && tooltip.active && tooltip.active.length > 0) {
+                        // First time seeing this tooltip
+                        if (lastShowTime === 0) {
+                            lastShowTime = Date.now();
+                            clearTimeout(tooltipTimer);
+                            tooltipTimer = setTimeout(() => {
+                                // Hide tooltip by clearing active elements
+                                tooltip.setActiveElements([], { x: 0, y: 0 });
+                                chart.draw();
+                                lastShowTime = 0;
+                            }, 5000);
+                        }
+                    } else {
+                        // Tooltip is not active
+                        if (tooltipTimer) {
+                            clearTimeout(tooltipTimer);
+                            tooltipTimer = null;
+                        }
+                        lastShowTime = 0;
+                    }
+                }
+            };
+        };
         
         function processMinuteDataForCharts(minutes, dateStr) {
             const labels = [];
@@ -1253,29 +1284,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        zoom: {
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                    speed: 0.1,
-                                    modifierKey: 'ctrl'
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x'
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            },
-                            limits: {
-                                x: {
-                                    min: 'original',
-                                    max: 'original'
-                                }
-                            }
-                        },
+                        tooltipAutoHide: createTooltipAutoHidePlugin(),
                         legend: {
                             display: true,
                             position: 'top',
@@ -1307,6 +1316,16 @@
                                         return `${hours}:${minutes}`;
                                     }
                                     return context[0].label || '';
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
                                 }
                             }
                         }
@@ -1461,29 +1480,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        zoom: {
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                    speed: 0.1,
-                                    modifierKey: 'ctrl'
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x'
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            },
-                            limits: {
-                                x: {
-                                    min: 'original',
-                                    max: 'original'
-                                }
-                            }
-                        },
+                        tooltipAutoHide: createTooltipAutoHidePlugin(),
                         legend: {
                             display: true,
                             position: 'top',
@@ -1515,6 +1512,16 @@
                                         return `${hours}:${minutes}`;
                                     }
                                     return context[0].label || '';
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
                                 }
                             }
                         }
@@ -1588,251 +1595,6 @@
                                 stepSize: 1
                             },
                             min: 0,
-                            max: 100
-                        }
-                    },
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                }
-            });
-        }
-        
-        function renderCombinedChart(chartData) {
-            let canvas = document.getElementById('combinedChart');
-            
-            // If canvas doesn't exist (was replaced by error message), restore it
-            if (!canvas) {
-                // Find the container by looking for the one that should contain combinedChart
-                const containers = document.querySelectorAll('.history-chart-container');
-                if (containers.length >= 3) {
-                    containers[2].innerHTML = '<canvas id="combinedChart" class="history-chart"></canvas>';
-                    canvas = document.getElementById('combinedChart');
-                }
-            }
-            
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            
-            // Destroy existing chart if it exists
-            if (combinedChartInstance) {
-                combinedChartInstance.destroy();
-            }
-            
-            // Store timestamps and labels for tooltip access
-            const timestamps = chartData.timestamps;
-            const labels = chartData.labels;
-            
-            // Pre-calculate all 24 full hours (00:00 to 23:00)
-            const fullHours = [];
-            if (timestamps.length > 0) {
-                const baseDate = new Date(timestamps[0]);
-                baseDate.setHours(0, 0, 0, 0);
-                
-                // Generate all 24 hours
-                for (let hour = 0; hour < 24; hour++) {
-                    const hourDate = new Date(baseDate);
-                    hourDate.setHours(hour, 0, 0, 0);
-                    fullHours.push(hourDate);
-                }
-            }
-            
-            const firstTimestamp = timestamps.length > 0 ? timestamps[0] : null;
-            const lastTimestamp = timestamps.length > 0 ? timestamps[timestamps.length - 1] : null;
-            
-            combinedChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [
-                        {
-                            type: 'bar',
-                            label: 'Heart Rate (bpm)',
-                            data: chartData.hrData,
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                            borderWidth: 1,
-                            yAxisID: 'y'
-                        },
-                        {
-                            type: 'line',
-                            label: 'Oxygen Saturation (%)',
-                            data: chartData.o2Data,
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            spanGaps: false,
-                            yAxisID: 'y1',
-                            borderDash: []
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        zoom: {
-                            zoom: {
-                                wheel: {
-                                    enabled: true,
-                                    speed: 0.1,
-                                    modifierKey: 'ctrl'
-                                },
-                                pinch: {
-                                    enabled: true
-                                },
-                                mode: 'x'
-                            },
-                            pan: {
-                                enabled: true,
-                                mode: 'x'
-                            },
-                            limits: {
-                                x: {
-                                    min: 'original',
-                                    max: 'original'
-                                }
-                            }
-                        },
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12
-                                },
-                                color: '#1e293b'
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            padding: 10,
-                            titleFont: {
-                                size: 12
-                            },
-                            bodyFont: {
-                                size: 11
-                            },
-                            callbacks: {
-                                title: function(context) {
-                                    const index = context[0].dataIndex;
-                                    const timestamp = timestamps[index];
-                                    if (timestamp) {
-                                        const hours = String(timestamp.getHours()).padStart(2, '0');
-                                        const minutes = String(timestamp.getMinutes()).padStart(2, '0');
-                                        return `${hours}:${minutes}`;
-                                    }
-                                    return context[0].label || '';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45,
-                                font: {
-                                    size: 10
-                                },
-                                color: '#64748b',
-                                maxTicksLimit: 24,
-                                callback: function(value, index, ticks) {
-                                    if (timestamps.length === 0) {
-                                        return '';
-                                    }
-                                    
-                                    // Get the label value - value might be index or string
-                                    let labelValue = '';
-                                    if (typeof value === 'string') {
-                                        labelValue = value;
-                                    } else if (typeof value === 'number' && index >= 0 && index < labels.length) {
-                                        labelValue = labels[index];
-                                    } else if (value !== null && value !== undefined) {
-                                        labelValue = String(value);
-                                    } else {
-                                        return '';
-                                    }
-                                    
-                                    if (!labelValue || labelValue === '') {
-                                        return '';
-                                    }
-                                    
-                                    // Parse HH:MM from label value
-                                    const timeMatch = labelValue.match(/(\d{2}):(\d{2})/);
-                                    if (!timeMatch) {
-                                        return '';
-                                    }
-                                    
-                                    const labelMinutes = parseInt(timeMatch[2], 10);
-                                    
-                                    // Only show labels at full hours (minutes === 00)
-                                    if (labelMinutes === 0) {
-                                        const labelHours = parseInt(timeMatch[1], 10);
-                                        return `${String(labelHours).padStart(2, '0')}:00`;
-                                    }
-                                    
-                                    return '';
-                                }
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Heart Rate (bpm)',
-                                font: {
-                                    size: 12
-                                },
-                                color: '#ef4444'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 10
-                                },
-                                color: '#ef4444'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Oxygen Saturation (%)',
-                                font: {
-                                    size: 12
-                                },
-                                color: '#8b5cf6'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 10
-                                },
-                                color: '#8b5cf6',
-                                stepSize: 1
-                            },
-                            min: 80,
                             max: 100
                         }
                     },
