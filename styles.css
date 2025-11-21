@@ -424,8 +424,8 @@ body {
 }
 
 .add-event-btn {
-    background: var(--primary);
-    color: var(--white);
+    background: var(--white);
+    color: var(--milestone);
     border: none;
     width: 44px;
     height: 44px;
@@ -435,19 +435,22 @@ body {
     justify-content: center;
     cursor: pointer;
     margin-left: 15px;
-    box-shadow: 0 4px 12px rgba(129, 140, 248, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.25);
     transition: all 0.2s ease;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 600;
 }
 
 .add-event-btn:hover {
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.35);
 }
 
 .add-event-btn svg {
-    stroke: white;
-    color: white;
+    stroke: var(--milestone);
+    color: var(--milestone);
+    width: 24px;
+    height: 24px;
 }
 
 .add-event-btn:active {
@@ -658,7 +661,7 @@ body {
     font-size: 32px;
     margin-bottom: 12px;
     color: var(--milestone);
-    background: #fffbeb;
+    background: #fef3c7;
     width: 56px;
     height: 56px;
     display: flex;
@@ -674,11 +677,26 @@ body {
     color: var(--milestone);
 }
 
+.milestone-box .milestone-icon img {
+    width: 24px;
+    height: 24px;
+}
+
+.milestone-box .milestone-type {
+    font-weight: 600;
+    color: #78350f;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
 .milestone-box .milestone-title {
     font-weight: 700;
     color: var(--text);
-    font-size: 15px;
+    font-size: 14px;
     margin-bottom: 6px;
+    min-height: 20px;
 }
 
 .milestone-box .milestone-date {
@@ -1337,11 +1355,37 @@ body {
     padding: 12px;
     margin-bottom: 12px;
     min-height: 250px;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+}
+
+.history-chart-container.zoomed {
+    cursor: grab;
+}
+
+.history-chart-container.zoomed:active {
+    cursor: grabbing;
+}
+
+.history-chart-inner {
+    position: relative;
+    display: inline-block;
+    min-width: 100%;
 }
 
 .history-chart {
     width: 100% !important;
     height: auto !important;
+}
+
+.history-chart-zoom-hint {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 8px;
+    padding: 4px 0;
+    text-align: center;
 }
 
 /* History Stats Grid */

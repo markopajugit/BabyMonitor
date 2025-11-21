@@ -12,7 +12,7 @@
             'Medicine': '<img src="134996.png" alt="Medicine Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Bath': '<img src="134996.png" alt="Bath Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Doctor': '<img src="134996.png" alt="Doctor Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Milestone': '<img src="263806.png" alt="Milestone Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Milestone': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 10.26 23.77 10.5 17.91 16.01 20.16 24.92 12 20.13 3.84 24.92 6.09 16.01 0.22 10.5 8.91 10.26 12 2"></polygon></svg>',
             'Other': '<img src="134996.png" alt="Other Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'default': '<img src="134996.png" alt="Event Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">'
         };
@@ -29,7 +29,7 @@
             'Medicine': '<img src="134996.png" alt="Medicine Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Bath': '<img src="134996.png" alt="Bath Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Doctor': '<img src="134996.png" alt="Doctor Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Milestone': '<img src="263806.png" alt="Milestone Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Milestone': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 10.26 23.77 10.5 17.91 16.01 20.16 24.92 12 20.13 3.84 24.92 6.09 16.01 0.22 10.5 8.91 10.26 12 2"></polygon></svg>',
             'Other': '<img src="134996.png" alt="Other Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'default': '<img src="134996.png" alt="Event Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">'
         };
@@ -1225,6 +1225,29 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1,
+                                    modifierKey: 'ctrl'
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            limits: {
+                                x: {
+                                    min: 'original',
+                                    max: 'original'
+                                }
+                            }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -1410,6 +1433,29 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1,
+                                    modifierKey: 'ctrl'
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            limits: {
+                                x: {
+                                    min: 'original',
+                                    max: 'original'
+                                }
+                            }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -1603,6 +1649,29 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.1,
+                                    modifierKey: 'ctrl'
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x'
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            limits: {
+                                x: {
+                                    min: 'original',
+                                    max: 'original'
+                                }
+                            }
+                        },
                         legend: {
                             display: true,
                             position: 'top',
@@ -1963,6 +2032,7 @@
                         
                         <div class="history-charts-section">
                             <h3 class="history-charts-title">Daily Charts</h3>
+                            <div class="history-chart-zoom-hint">💡 Pinch to zoom, drag to pan</div>
                             <div class="history-chart-container">
                                 <canvas id="hrChart" class="history-chart"></canvas>
                             </div>
@@ -2079,7 +2149,9 @@
         // Render milestones grid with 6 boxes
         function renderMilestones() {
             const milestonesGrid = document.getElementById('milestonesGrid');
-            const milestones = events.filter(event => event.type === 'Milestone');
+            // Show milestone event types: Milestone, Bath, Medicine, Doctor
+            const milestoneTypes = ['Milestone', 'Bath', 'Medicine', 'Doctor'];
+            const milestones = events.filter(event => milestoneTypes.includes(event.type));
             
             // Create 6 boxes
             const boxes = [];
@@ -2095,8 +2167,9 @@
                     
                     boxes.push(`
                         <div class="milestone-box" onclick="editEvent(${milestone.id})">
-                            <div class="milestone-icon">${ICONS['Milestone']}</div>
-                            <div class="milestone-title">${milestone.notes || milestone.type}</div>
+                            <div class="milestone-icon">${ICONS[milestone.type]}</div>
+                            <div class="milestone-type">${milestone.type}</div>
+                            <div class="milestone-title">${milestone.notes || ''}</div>
                             <div class="milestone-date">${dateStr}</div>
                         </div>
                     `);
@@ -2104,7 +2177,7 @@
                     boxes.push(`
                         <div class="milestone-box empty" onclick="openModal(); document.getElementById('eventType').value = 'Milestone';">
                             <div class="milestone-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></div>
-                            <div class="milestone-title">Add Milestone</div>
+                            <div class="milestone-title">Add Event</div>
                         </div>
                     `);
                 }

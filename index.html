@@ -16,7 +16,7 @@
         integrity="sha256-6kZaxraaA33En9pqscWF+VclCR7/RRXfYduR2dPF5U4=" crossorigin="anonymous"></script>
 
     <title>Baby Monitor</title>
-    <link rel="stylesheet" href="styles.css?v=1.6.5">
+    <link rel="stylesheet" href="styles.css?v=1.7.2">
 </head>
 
 <body>
@@ -270,7 +270,7 @@
                 </div>
                 <div class="stat-item stat-feed">
                     <div class="stat-icon feed">
-                        <i data-feather="arrow-down"></i>
+                        <img src="4292048.png" alt="Feed Icon" class="feed-icon" width="18" height="18">
                     </div>
                     <div class="stat-details">
                         <div class="stat-duration" id="feedDuration">0h 0m</div>
@@ -316,7 +316,9 @@
 
     <!-- Chart.js for HR and O2 charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="app.js?v=1.6.5"></script>
+    <!-- Chart.js Zoom Plugin for horizontal zooming -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.1.0/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="app.js?v=1.7.2"></script>
 </body>
 
 </html>
