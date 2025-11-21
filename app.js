@@ -534,13 +534,10 @@
                                     </div>
                                 </div>
                                 
-                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                                        <span>Skin Temperature</span>
-                                        <span id="tempInvalidIcon" style="cursor: pointer; font-size: 16px; color: #ef4444;">?</span>
-                                    </div>
-                                    <div id="owletTempValue" class="owlet-vital-value" style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                        ${tempDisplay}
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Signal Strength</div>
+                                    <div id="owletSignalValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${signalDisplay}
                                     </div>
                                 </div>
                             </div>
@@ -556,10 +553,13 @@
                                     </div>
                                 </div>
                                 
-                                <div style="background: #f8fafc; border-radius: 8px; padding: 12px;">
-                                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Signal Strength</div>
-                                    <div id="owletSignalValue" style="font-size: 20px; font-weight: 600; color: #1e293b;">
-                                        ${signalDisplay}
+                                <div class="owlet-vital-card" style="background: #f8fafc; border-radius: 8px; padding: 12px;">
+                                    <div class="owlet-vital-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                                        <span>Skin Temperature</span>
+                                        <span id="tempInvalidIcon" style="cursor: pointer; font-size: 16px; color: #ef4444;">?</span>
+                                    </div>
+                                    <div id="owletTempValue" class="owlet-vital-value" style="font-size: 20px; font-weight: 600; color: #1e293b;">
+                                        ${tempDisplay}
                                     </div>
                                 </div>
                             </div>
@@ -999,6 +999,7 @@
         function closeOwletHistoryView() {
             document.getElementById('owletHistoryView').classList.remove('active');
             document.getElementById('owletView').classList.remove('hidden');
+            document.getElementById('owletView').classList.add('active');
             if (owletHistoryAutoRefreshInterval) {
                 clearInterval(owletHistoryAutoRefreshInterval);
                 owletHistoryAutoRefreshInterval = null;
@@ -1341,6 +1342,10 @@
                                     return context[0].label || '';
                                 },
                                 label: function(context) {
+                                    // Don't show tooltip if value is 0
+                                    if (context.parsed.y === 0) {
+                                        return '';
+                                    }
                                     let label = context.dataset.label || '';
                                     if (label) {
                                         label += ': ';
@@ -1537,6 +1542,10 @@
                                     return context[0].label || '';
                                 },
                                 label: function(context) {
+                                    // Don't show tooltip if value is 0
+                                    if (context.parsed.y === 0) {
+                                        return '';
+                                    }
                                     let label = context.dataset.label || '';
                                     if (label) {
                                         label += ': ';
