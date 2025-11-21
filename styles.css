@@ -1359,6 +1359,7 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
+    touch-action: none;
 }
 
 .history-chart-container.zoomed {
@@ -1378,6 +1379,9 @@ body {
 .history-chart {
     width: 100% !important;
     height: auto !important;
+    touch-action: manipulation;
+    display: block;
+    pointer-events: auto;
 }
 
 .history-chart-zoom-hint {

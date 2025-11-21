@@ -1,5 +1,33 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.3';
+        const APP_VERSION = '1.7.5';
+
+        // Register Chart.js zoom plugin with retry logic
+        let attempts = 0;
+        const maxAttempts = 50;
+        const attemptRegister = setInterval(() => {
+            attempts++;
+            // Try different possible global names for the plugin
+            const plugin = window.zoomPlugin || window.ChartZoom || (window.Chart && window.Chart.plugins && window.Chart.plugins.zoom);
+            
+            if (plugin) {
+                try {
+                    if (typeof plugin.id !== 'undefined') {
+                        // It's the actual plugin object
+                        Chart.register(plugin);
+                    } else if (typeof plugin === 'object' && plugin.id) {
+                        Chart.register(plugin);
+                    }
+                    console.log('Chart zoom plugin registered');
+                    clearInterval(attemptRegister);
+                } catch (e) {
+                    console.log('Chart zoom plugin already registered or error:', e.message);
+                    clearInterval(attemptRegister);
+                }
+            } else if (attempts >= maxAttempts) {
+                console.warn('Zoom plugin timeout - proceeding without it');
+                clearInterval(attemptRegister);
+            }
+        }, 100);
 
         const ICONS = {
             'Feed': '<img src="4292048.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
@@ -2032,7 +2060,6 @@
                         
                         <div class="history-charts-section">
                             <h3 class="history-charts-title">Daily Charts</h3>
-                            <div class="history-chart-zoom-hint">💡 Pinch to zoom, drag to pan</div>
                             <div class="history-chart-container">
                                 <canvas id="hrChart" class="history-chart"></canvas>
                             </div>
