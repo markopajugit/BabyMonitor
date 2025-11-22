@@ -50,8 +50,8 @@
             'Feed Start': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Feed End': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Feed': '<img src="feed.png" alt="Feed Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep Start': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
-            'Sleep End': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
+            'Sleep Start': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
+            'Sleep End': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
             'Sleep': '<img src="sleep.png" alt="Sleep Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Diaper': '<img src="sock.png" alt="Diaper Icon" width="24" height="24" style="filter: invert(1) brightness(1.2);">',
             'Medicine': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
@@ -75,9 +75,31 @@
         }
 
         // Open modal
-        function openModal() {
+        function openModal(milestonesOnly = false) {
             document.getElementById('eventModal').classList.add('active');
             setDefaultTime();
+            
+            const eventTypeSelect = document.getElementById('eventType');
+            
+            if (milestonesOnly) {
+                // Show only milestone types
+                const milestoneTypes = ['Milestone', 'Bath', 'Medicine', 'Doctor', 'Other'];
+                const options = eventTypeSelect.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    if (option.value === '' || milestoneTypes.includes(option.value)) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            } else {
+                // Show all options
+                const options = eventTypeSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    option.style.display = '';
+                });
+            }
         }
 
         // Close modal
@@ -1970,8 +1992,8 @@
         // Render milestones grid with 6 boxes
         function renderMilestones() {
             const milestonesGrid = document.getElementById('milestonesGrid');
-            // Show milestone event types: Milestone, Bath, Medicine, Doctor
-            const milestoneTypes = ['Milestone', 'Bath', 'Medicine', 'Doctor'];
+            // Show milestone event types: Milestone, Bath, Medicine, Doctor, Other
+            const milestoneTypes = ['Milestone', 'Bath', 'Medicine', 'Doctor', 'Other'];
             const milestones = events.filter(event => milestoneTypes.includes(event.type));
             
             // Create 6 boxes
