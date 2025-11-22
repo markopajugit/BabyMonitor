@@ -173,20 +173,22 @@
                     const action = editingId ? 'updated' : 'recorded';
                     showToast(`<span style="display:inline-flex;vertical-align:middle;margin-right:8px;width:20px;height:20px">${iconSvg}</span> ${type} ${action}!`);
                     
-                    // Refresh the current view
-                    if (document.getElementById('eventsView').classList.contains('active')) {
-                        renderEvents();
-                    }
-                    if (document.getElementById('milestonesView').classList.contains('active')) {
-                        renderMilestones();
-                    }
+                    // Refresh the current view after events are loaded
+                    loadEvents().then(() => {
+                        if (document.getElementById('eventsView').classList.contains('active')) {
+                            renderEvents();
+                        }
+                        if (document.getElementById('milestonesView').classList.contains('active')) {
+                            renderMilestones();
+                        }
+                    });
                 }
             });
         });
 
         // Load events from server
         function loadEvents() {
-            fetch(`events.php?v=${APP_VERSION}`)
+            return fetch(`events.php?v=${APP_VERSION}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to load events');
@@ -234,7 +236,6 @@
             })
             .then(data => {
                 if (data.success) {
-                    loadEvents(); // Reload to get updated list
                     return true;
                 } else {
                     throw new Error(data.error || 'Failed to save event');
