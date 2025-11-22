@@ -1,5 +1,5 @@
         // App version - increment this when you update files to force cache refresh
-        const APP_VERSION = '1.7.5';
+        const APP_VERSION = '1.7.6';
 
         // Register Chart.js zoom plugin with retry logic
         let attempts = 0;
